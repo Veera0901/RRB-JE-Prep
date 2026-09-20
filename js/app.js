@@ -278,12 +278,13 @@ function showValidation(q, choice, correct, recordHistory) {
     chip.className = "topic-chip";
     chip.type = "button";
     chip.textContent = topic;
-    chip.addEventListener("click", () => startTopicPractice(topic));
+    chip.addEventListener("click", () => showRelatedContent(topic));
     topicBox.appendChild(chip);
   });
 
   if (recordHistory) updateTopicHistory(q.topic, correct);
   $("topic-status").textContent = getTopicStatus(q.topic);
+  showRelatedContent(topics[0] || q.topic);
 
   $("feedback-details").classList.add("hidden");
   $("explanation-btn").disabled = false;
@@ -300,6 +301,8 @@ function resetFeedback() {
   $("feedback-trick").textContent = "";
   $("feedback-trick-wrap").classList.add("hidden");
   $("related-topics").innerHTML = "";
+  $("related-content").innerHTML = "";
+  $("related-content").classList.add("hidden");
   $("topic-status").textContent = "";
   $("explanation-btn").disabled = true;
   $("explanation-btn").textContent = "◉ View Detailed Explanation";
@@ -326,6 +329,68 @@ function getTopicStatus(topic) {
   }
 
   return \`Keep practicing • ${topic}\`;
+}
+
+function showRelatedContent(topic) {
+  const box = $("related-content");
+  const matches = activeTestBank.filter(q =>
+    q.topic === topic || (q.relatedTopics || []).includes(topic)
+  );
+
+  box.innerHTML = "";
+
+  if (!matches.length) {
+    box.classList.add("hidden");
+    return;
+  }
+
+  const title = document.createElement("div");
+  title.className = "related-content-title";
+  title.textContent = `Related content • ${topic}`;
+  box.appendChild(title);
+
+  matches.slice(0, 4).forEach(q => {
+    const item = document.createElement("article");
+    item.className = "related-item";
+
+    const top = document.createElement("div");
+    top.className = "related-item-top";
+
+    const tag = document.createElement("span");
+    tag.className = "related-item-topic";
+    tag.textContent = q.topic;
+
+    const answer = document.createElement("span");
+    answer.className = "related-item-answer";
+    answer.textContent = `✓ ${String.fromCharCode(65 + q.answer)}. ${q.options[q.answer]}`;
+
+    top.append(tag, answer);
+
+    const question = document.createElement("div");
+    question.className = "related-item-question";
+    question.textContent = q.question;
+
+    const note = document.createElement("div");
+    note.className = "related-item-note";
+    note.textContent = q.explanation || q.trick || "Review this question again.";
+
+    item.append(top, question, note);
+    box.appendChild(item);
+  });
+
+  const actions = document.createElement("div");
+  actions.className = "related-content-actions";
+
+  const practice = document.createElement("button");
+  practice.type = "button";
+  practice.className = "related-practice-btn";
+  practice.textContent = `Practice ${topic}`;
+  practice.addEventListener("click", () => startTopicPractice(topic));
+
+  actions.appendChild(practice);
+  box.appendChild(actions);
+
+  box.classList.remove("hidden");
 }
 
 function startTopicPractice(topic) {
