@@ -67,7 +67,7 @@ function selectOption(choice) {
 function clearSelection() {
   if (selected === null) return;
   selected = null;
-  $("save-next-btn").disabled = true;
+  $("save-next-btn").disabled = false;
   [...$("options").children].forEach(el => el.classList.remove("selected", "correct", "wrong"));
 }
 
@@ -85,8 +85,13 @@ function toggleReview() {
 }
 
 function saveAndNext() {
-  if (selected === null) return;
   const q = questions[index];
+  if (selected === null) {
+    index++;
+    if (index < questions.length) render();
+    else showResult();
+    return;
+  }
   const correct = selected === q.answer;
   const existing = answers.findIndex(a => a.id === q.id);
   if (existing >= 0) {
@@ -117,7 +122,7 @@ function toggleExplanation() {
   if (feedback.classList.contains("hidden")) {
     if (selected === null) {
       $("feedback-status").textContent = "Explanation";
-      $("feedback-answer").textContent = "Select an answer or review the explanation before continuing.";
+      $("feedback-answer").textContent = `Correct answer: ${String.fromCharCode(65 + questions[index].answer)}. ${questions[index].options[questions[index].answer]}`;
       $("feedback-explanation").textContent = questions[index].explanation || "Review the concept and related topics.";
       feedback.classList.remove("hidden");
     } else {
