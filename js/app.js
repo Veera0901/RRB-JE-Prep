@@ -42,7 +42,7 @@ function render() {
   $("related-topics").innerHTML = "";
   $("topic-status").textContent = "";
   $("explanation-btn").textContent = "View Explanation";
-  $("save-next-btn").disabled = true;
+  $("save-next-btn").disabled = false;
   $("review-btn").textContent = marked.has(q.id) ? "★ Marked for Review" : "☆ Mark for Review";
   $("review-btn").classList.toggle("marked", marked.has(q.id));
 
