@@ -9,70 +9,35 @@
 <body>
   <main class="app">
     <header class="hero">
-      <div>
-        <p class="eyebrow">RRB JE 2026</p>
-        <h1>Current Affairs</h1>
-        <p class="subtitle">CBT-1 focused practice and revision.</p>
-      </div>
+      <div><p class="eyebrow">RRB JE 2026</p><h1>Current Affairs</h1><p class="subtitle">CBT-1 focused practice and revision.</p></div>
       <div class="badge">15 Questions / Test</div>
     </header>
 
     <section id="home-screen">
-      <div class="home-summary card">
-        <div>
-          <p class="eyebrow">Practice Hub</p>
-          <h2>Choose a Test</h2>
-          <p>Each test contains 15 exam-oriented current-affairs questions with instant validation, explanations and related topics.</p>
-        </div>
-      </div>
-
+      <div class="home-summary card"><div><p class="eyebrow">Practice Hub</p><h2>Choose a Test</h2><p>Each test contains 15 exam-oriented current-affairs questions with instant validation, explanations and related topics.</p></div></div>
       <div class="test-list">
-        <article class="test-card card">
-          <div class="test-number">01</div>
-          <div class="test-info">
-            <p class="eyebrow">September 2026</p>
-            <h2>Current Affairs Test 01</h2>
-            <p>Railways • Science & Technology • Economy • Schemes • Sports • International Affairs</p>
-            <div class="test-meta"><span>15 Questions</span><span>Verified sources</span></div>
-          </div>
-          <button id="test-1-btn" class="primary">Start Test</button>
-        </article>
-
-        <article class="test-card card locked">
-          <div class="test-number">02</div>
-          <div class="test-info">
-            <p class="eyebrow">Coming Next</p>
-            <h2>Current Affairs Test 02</h2>
-            <p>Another 15-question current-affairs set will be added here.</p>
-            <div class="test-meta"><span>15 Questions</span><span>Coming soon</span></div>
-          </div>
-          <span class="lock-label">Coming Soon</span>
-        </article>
-
-        <article class="test-card card locked">
-          <div class="test-number">03</div>
-          <div class="test-info">
-            <p class="eyebrow">Coming Next</p>
-            <h2>Current Affairs Test 03</h2>
-            <p>More verified current-affairs practice will be added here.</p>
-            <div class="test-meta"><span>15 Questions</span><span>Coming soon</span></div>
-          </div>
-          <span class="lock-label">Coming Soon</span>
-        </article>
+        <article class="test-card card"><div class="test-number">01</div><div class="test-info"><p class="eyebrow">September 2026</p><h2>Current Affairs Test 01</h2><p>Railways • Science & Technology • Economy • Schemes • Sports • International Affairs</p><div class="test-meta"><span>15 Questions</span><span>Verified sources</span></div></div><button id="test-1-btn" class="primary">Start Test</button></article>
+        <article class="test-card card locked"><div class="test-number">02</div><div class="test-info"><p class="eyebrow">Coming Next</p><h2>Current Affairs Test 02</h2><p>Another 15-question current-affairs set will be added here.</p><div class="test-meta"><span>15 Questions</span><span>Coming soon</span></div></div><span class="lock-label">Coming Soon</span></article>
+        <article class="test-card card locked"><div class="test-number">03</div><div class="test-info"><p class="eyebrow">Coming Next</p><h2>Current Affairs Test 03</h2><p>More verified current-affairs practice will be added here.</p><div class="test-meta"><span>15 Questions</span><span>Coming soon</span></div></div><span class="lock-label">Coming Soon</span></article>
       </div>
     </section>
 
     <section id="quiz-screen" class="hidden">
-      <div class="progress-row">
-        <button id="home-btn" class="text-btn">← Tests</button>
-        <span id="question-count"></span>
-        <span id="score-live">0 correct</span>
-      </div>
+      <div class="progress-row"><button id="home-btn" class="text-btn">← Tests</button><span id="question-count"></span><span id="score-live">0 correct</span></div>
       <div class="progress"><div id="progress-bar"></div></div>
       <article class="card question-card">
         <p id="question-topic" class="topic"></p>
         <h2 id="question-text"></h2>
         <div id="options" class="options"></div>
+
+        <div class="quiz-actions">
+          <button id="save-next-btn" class="primary" disabled>Save & Next</button>
+          <button id="clear-btn" class="secondary">Clear</button>
+          <button id="review-btn" class="review-btn">☆ Mark for Review</button>
+        </div>
+
+        <button id="explanation-btn" class="explanation-btn" type="button">View Explanation</button>
+
         <div id="feedback" class="feedback hidden">
           <div id="feedback-status" class="feedback-status"></div>
           <div class="feedback-answer"><strong>Correct Answer:</strong> <span id="feedback-answer"></span></div>
@@ -81,16 +46,13 @@
           <div class="related"><strong>Related Topics</strong><div id="related-topics" class="topic-chips"></div></div>
           <div id="topic-status" class="topic-status"></div>
         </div>
-        <div class="nav-row"><button id="next-btn" class="primary" disabled>Next</button></div>
       </article>
     </section>
 
     <section id="result-screen" class="hidden">
       <div class="card result-card">
         <button id="result-home-btn" class="text-btn">← Back to Tests</button>
-        <p class="eyebrow">Test Complete</p>
-        <h2 id="result-title"></h2>
-        <p id="result-summary"></p>
+        <p class="eyebrow">Test Complete</p><h2 id="result-title"></h2><p id="result-summary"></p>
         <div id="review-list" class="review-list"></div>
         <button id="retry-btn" class="primary">Retry Incorrect</button>
         <button id="new-btn" class="secondary">Start Test Again</button>
