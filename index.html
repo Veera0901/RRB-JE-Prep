@@ -9,8 +9,8 @@
 <body>
   <header class="site-header">
     <div class="site-title">
-      <strong>RRB JE 2026 — Current Affairs</strong>
-      <span id="exam-subtitle">CBT-1 • CURRENT AFFAIRS • PRACTICE</span>
+      <strong>RRB JE 2026 — Preparation Portal</strong>
+      <span id="exam-subtitle">CBT-1 • SUBJECT-WISE PRACTICE</span>
     </div>
     <div class="mode-switch" aria-label="Practice mode">
       <button class="mode active" type="button">Practice Mode</button>
@@ -20,48 +20,71 @@
 
   <main class="app">
     <section id="home-screen">
-      <div class="home-summary card">
+      <div class="home-hero">
         <div>
-          <p class="eyebrow">Practice Hub</p>
-          <h1>Current Affairs Tests</h1>
-          <p>15 exam-oriented questions per test with instant validation, explanations and related-topic revision.</p>
+          <p class="eyebrow">RRB JE 2026 • CBT-1</p>
+          <h1>Practice Subjects</h1>
+          <p>Select a subject to view its available tests. Current Affairs is the first subject deployed.</p>
         </div>
+        <div class="home-hero-badge"><strong>1</strong><span>Subject live</span></div>
       </div>
 
-      <div class="test-list">
-        <article class="test-card card">
-          <div class="test-number">01</div>
-          <div class="test-info">
-            <p class="eyebrow">September 2026</p>
-            <h2>Current Affairs Test 01</h2>
-            <p>Railways • Science & Technology • Economy • Schemes • Sports • International Affairs</p>
-            <div class="test-meta"><span>15 Questions</span><span>Verified sources</span></div>
-          </div>
-          <button id="test-1-btn" class="primary">Start Test</button>
-        </article>
-
-        <article class="test-card card">
-          <div class="test-number">02</div>
-          <div class="test-info">
-            <p class="eyebrow">August 2026</p>
-            <h2>Current Affairs Test 02</h2>
-            <p>Energy • Railways • Infrastructure • Government Schemes • Education</p>
-            <div class="test-meta"><span>15 Questions</span><span>Verified sources</span></div>
-          </div>
-          <button id="test-2-btn" class="primary">Start Test</button>
-        </article>
-
-        <article class="test-card card">
-          <div class="test-number">03</div>
-          <div class="test-info">
-            <p class="eyebrow">September 2026 — Recent</p>
-            <h2>Current Affairs Test 03</h2>
-            <p>FinTech • Semiconductors • Employment • Nutrition • Education • Energy</p>
-            <div class="test-meta"><span>15 Questions</span><span>Verified sources</span></div>
-          </div>
-          <button id="test-3-btn" class="primary">Start Test</button>
-        </article>
+      <div class="subject-section-head">
+        <div>
+          <p class="eyebrow">Subjects</p>
+          <h2>Available Subjects</h2>
+        </div>
+        <span class="subject-note">More subjects can be added without changing the test flow.</span>
       </div>
+
+      <article class="subject-card card">
+        <div class="subject-card-head">
+          <div class="subject-icon">CA</div>
+          <div class="subject-title-wrap">
+            <div class="subject-kicker">Subject 01</div>
+            <h2>Current Affairs</h2>
+            <p>Monthly current affairs practice for RRB JE CBT-1. Each test contains 15 questions with instant validation and revision support.</p>
+          </div>
+          <div class="subject-count">
+            <strong>3</strong>
+            <span>Tests</span>
+          </div>
+        </div>
+
+        <div class="subject-divider"></div>
+
+        <div class="subject-tests">
+          <div class="subject-test-row">
+            <div class="test-index">01</div>
+            <div class="test-row-info">
+              <div class="test-row-title"><strong>Current Affairs Test 01</strong><span class="available-badge">Available</span></div>
+              <p>September 2026 • Railways • Science &amp; Technology • Economy • Schemes • Sports</p>
+              <div class="row-meta"><span>15 Questions</span><span>Practice Mode</span></div>
+            </div>
+            <button id="test-1-btn" class="primary test-start-btn">Start Test <span aria-hidden="true">→</span></button>
+          </div>
+
+          <div class="subject-test-row">
+            <div class="test-index">02</div>
+            <div class="test-row-info">
+              <div class="test-row-title"><strong>Current Affairs Test 02</strong><span class="available-badge">Available</span></div>
+              <p>August 2026 • Energy • Railways • Infrastructure • Government Schemes • Education</p>
+              <div class="row-meta"><span>15 Questions</span><span>Practice Mode</span></div>
+            </div>
+            <button id="test-2-btn" class="primary test-start-btn">Start Test <span aria-hidden="true">→</span></button>
+          </div>
+
+          <div class="subject-test-row">
+            <div class="test-index">03</div>
+            <div class="test-row-info">
+              <div class="test-row-title"><strong>Current Affairs Test 03</strong><span class="available-badge">Available</span></div>
+              <p>September 2026 — Recent • FinTech • Semiconductors • Employment • Nutrition • Education</p>
+              <div class="row-meta"><span>15 Questions</span><span>Practice Mode</span></div>
+            </div>
+            <button id="test-3-btn" class="primary test-start-btn">Start Test <span aria-hidden="true">→</span></button>
+          </div>
+        </div>
+      </article>
     </section>
 
     <section id="quiz-screen" class="hidden">
@@ -181,7 +204,7 @@
           <button id="new-btn" class="secondary">Start Test Again</button>
         </div>
       </div>
-    </section>ion>
+    </section>
   </main>
 
   <script src="js/questions.js"></script>
