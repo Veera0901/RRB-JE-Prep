@@ -5,9 +5,11 @@ let selected = null;
 let answers = [];
 
 const $ = (id) => document.getElementById(id);
-const start = $("start-screen"), quiz = $("quiz-screen"), result = $("result-screen");
+const home = $("home-screen"), quiz = $("quiz-screen"), result = $("result-screen");
 
-$("start-btn").addEventListener("click", () => startTest(questions));
+$("test-1-btn").addEventListener("click", () => startTest(questionBank));
+$("home-btn").addEventListener("click", showHome);
+$("result-home-btn").addEventListener("click", showHome);
 $("next-btn").addEventListener("click", nextQuestion);
 $("retry-btn").addEventListener("click", () => {
   const retry = answers.filter(a => !a.correct).map(a => questionBank.find(q => q.id === a.id));
@@ -18,7 +20,7 @@ $("new-btn").addEventListener("click", () => startTest(questionBank));
 function startTest(bank) {
   questions = [...bank];
   index = 0; score = 0; selected = null; answers = [];
-  start.classList.add("hidden"); result.classList.add("hidden"); quiz.classList.remove("hidden");
+  home.classList.add("hidden"); result.classList.add("hidden"); quiz.classList.remove("hidden");
   render();
 }
 
@@ -111,6 +113,13 @@ function startTopicPractice(topic) {
     q.topic === topic || (q.relatedTopics || []).includes(topic)
   );
   if (related.length) startTest(related);
+}
+
+function showHome() {
+  quiz.classList.add("hidden");
+  result.classList.add("hidden");
+  home.classList.remove("hidden");
+  window.scrollTo({top:0, behavior:"smooth"});
 }
 
 function nextQuestion() {
