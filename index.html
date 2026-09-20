@@ -82,17 +82,20 @@
             <span id="question-topic" class="topic"></span>
           </div>
           <h2 id="question-text"></h2>
+          <div class="answer-hint"><span class="hint-dot"></span>Select an option for instant validation</div>
           <div id="options" class="options"></div>
 
-          <button id="explanation-btn" class="explanation-btn" type="button">◉ View Detailed Explanation</button>
+          <button id="explanation-btn" class="explanation-btn" type="button" disabled>◉ View Detailed Explanation</button>
 
           <div id="feedback" class="feedback hidden">
             <div id="feedback-status" class="feedback-status"></div>
             <div class="feedback-answer"><strong>Correct Answer:</strong> <span id="feedback-answer"></span></div>
-            <div><strong>Solution:</strong><p id="feedback-explanation"></p></div>
-            <div id="feedback-trick-wrap" class="trick hidden"><strong>Exam Trick:</strong> <span id="feedback-trick"></span></div>
-            <div class="related"><strong>Related Topics</strong><div id="related-topics" class="topic-chips"></div></div>
-            <div id="topic-status" class="topic-status"></div>
+            <div id="feedback-details" class="feedback-details hidden">
+              <div class="solution-box"><strong>Solution</strong><p id="feedback-explanation"></p></div>
+              <div id="feedback-trick-wrap" class="trick hidden"><strong>Exam Trick</strong><span id="feedback-trick"></span></div>
+              <div class="related"><strong>Related Topics</strong><div id="related-topics" class="topic-chips"></div></div>
+              <div id="topic-status" class="topic-status"></div>
+            </div>
           </div>
         </article>
 
@@ -111,7 +114,7 @@
 
       <div class="quiz-actions">
         <button id="previous-btn" class="secondary">Previous</button>
-        <button id="save-next-btn" class="primary">Save &amp; Next</button>
+        <button id="save-next-btn" class="primary">Save &amp; Next <span aria-hidden="true">→</span></button>
         <button id="clear-btn" class="secondary">Clear Choice</button>
         <button id="review-btn" class="review-btn">Mark for Review</button>
       </div>
