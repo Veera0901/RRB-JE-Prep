@@ -29,10 +29,10 @@ $("retry-btn").addEventListener("click", () => {
     .filter(a => !a.correct)
     .map(a => activeTestBank.find(q => q.id === a.id))
     .filter(Boolean);
-  startTest(retry.length ? retry : activeTestBank);
+  startTest(retry.length ? retry : activeTestBank, activeTestLabel);
 });
 
-$("new-btn").addEventListener("click", () => startTest(activeTestBank));
+$("new-btn").addEventListener("click", () => startTest(activeTestBank, activeTestLabel));
 $("review-answers-btn").addEventListener("click", () => {
   document.querySelector(".review-card").scrollIntoView({behavior:"smooth", block:"start"});
 });
