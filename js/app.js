@@ -31,6 +31,11 @@ function render() {
   $("question-text").textContent = q.question;
   $("next-btn").disabled = true;
   selected = null;
+  $("feedback").classList.add("hidden");
+  $("feedback-status").textContent = "";
+  $("feedback-trick-wrap").classList.add("hidden");
+  $("related-topics").innerHTML = "";
+  $("topic-status").textContent = "";
 
   const box = $("options");
   box.innerHTML = "";
@@ -50,13 +55,62 @@ function selectOption(choice, button) {
   const correct = choice === q.answer;
   if (correct) score++;
   answers.push({id:q.id, choice, correct});
+
   [...$("options").children].forEach((el, i) => {
     el.disabled = true;
     if (i === q.answer) el.classList.add("correct");
     if (i === choice && !correct) el.classList.add("wrong");
   });
+
   $("score-live").textContent = `${score} correct`;
+  showFeedback(q, correct);
   $("next-btn").disabled = false;
+}
+
+function showFeedback(q, correct) {
+  const feedback = $("feedback");
+  $("feedback-status").textContent = correct ? "✓ Correct" : "✗ Incorrect";
+  $("feedback-answer").textContent = `${String.fromCharCode(65 + q.answer)}. ${q.options[q.answer]}`;
+  $("feedback-explanation").textContent = q.explanation || "Review the concept and related topics.";
+  
+  if (q.trick) {
+    $("feedback-trick").textContent = q.trick;
+    $("feedback-trick-wrap").classList.remove("hidden");
+  }
+
+  const topics = q.relatedTopics || [q.topic];
+  const topicBox = $("related-topics");
+  topics.forEach(topic => {
+    const chip = document.createElement("button");
+    chip.className = "topic-chip";
+    chip.type = "button";
+    chip.textContent = topic;
+    chip.title = "Topic filter will be connected to the topic practice bank.";
+    chip.addEventListener("click", () => startTopicPractice(topic));
+    topicBox.appendChild(chip);
+  });
+
+  $("topic-status").textContent = getTopicStatus(q.topic, correct);
+  feedback.classList.remove("hidden");
+}
+
+function getTopicStatus(topic, currentCorrect) {
+  const history = JSON.parse(localStorage.getItem("rrbTopicHistory") || "{}");
+  if (!history[topic]) history[topic] = {correct:0, wrong:0};
+  history[topic][currentCorrect ? "correct" : "wrong"]++;
+  localStorage.setItem("rrbTopicHistory", JSON.stringify(history));
+
+  const h = history[topic];
+  if (h.wrong >= 2 && h.wrong >= h.correct) return `🔴 Needs focused revision — ${h.wrong} mistake(s) recorded in ${topic}.`;
+  if (h.correct >= 3 && h.correct > h.wrong) return `🟢 Strong topic — ${h.correct} correct answer(s) recorded in ${topic}.`;
+  return `🟡 Needs revision — keep practicing ${topic}.`;
+}
+
+function startTopicPractice(topic) {
+  const related = questionBank.filter(q =>
+    q.topic === topic || (q.relatedTopics || []).includes(topic)
+  );
+  if (related.length) startTest(related);
 }
 
 function nextQuestion() {
