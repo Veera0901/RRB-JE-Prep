@@ -4,11 +4,14 @@ let score = 0;
 let selected = null;
 let answers = [];
 let marked = new Set();
+let activeTestBank = questionBank;
 
 const $ = (id) => document.getElementById(id);
 const home = $("home-screen"), quiz = $("quiz-screen"), result = $("result-screen");
 
 $("test-1-btn").addEventListener("click", () => startTest(questionBank));
+$("test-2-btn").addEventListener("click", () => startTest(test2Questions));
+$("test-3-btn").addEventListener("click", () => startTest(test3Questions));
 $("home-btn").addEventListener("click", showHome);
 $("result-home-btn").addEventListener("click", showHome);
 $("save-next-btn").addEventListener("click", saveAndNext);
@@ -16,12 +19,13 @@ $("clear-btn").addEventListener("click", clearSelection);
 $("review-btn").addEventListener("click", toggleReview);
 $("explanation-btn").addEventListener("click", toggleExplanation);
 $("retry-btn").addEventListener("click", () => {
-  const retry = answers.filter(a => !a.correct).map(a => questionBank.find(q => q.id === a.id));
-  startTest(retry.length ? retry : questionBank);
+  const retry = answers.filter(a => !a.correct).map(a => activeTestBank.find(q => q.id === a.id)).filter(Boolean);
+  startTest(retry.length ? retry : activeTestBank);
 });
-$("new-btn").addEventListener("click", () => startTest(questionBank));
+$("new-btn").addEventListener("click", () => startTest(activeTestBank));
 
 function startTest(bank) {
+  activeTestBank = bank;
   questions = [...bank];
   index = 0; score = 0; selected = null; answers = []; marked = new Set();
   home.classList.add("hidden"); result.classList.add("hidden"); quiz.classList.remove("hidden");
@@ -42,7 +46,6 @@ function render() {
   $("related-topics").innerHTML = "";
   $("topic-status").textContent = "";
   $("explanation-btn").textContent = "View Explanation";
-  $("save-next-btn").disabled = false;
   $("review-btn").textContent = marked.has(q.id) ? "★ Marked for Review" : "☆ Mark for Review";
   $("review-btn").classList.toggle("marked", marked.has(q.id));
 
@@ -172,7 +175,7 @@ function getTopicStatus(topic, currentCorrect) {
 }
 
 function startTopicPractice(topic) {
-  const related = questionBank.filter(q => q.topic === topic || (q.relatedTopics || []).includes(topic));
+  const related = activeTestBank.filter(q => q.topic === topic || (q.relatedTopics || []).includes(topic));
   if (related.length) startTest(related);
 }
 
@@ -188,7 +191,7 @@ function showResult() {
   const list = $("review-list");
   list.innerHTML = "";
   answers.forEach(a => {
-    const q = questionBank.find(x => x.id === a.id);
+    const q = activeTestBank.find(x => x.id === a.id);
     const div = document.createElement("div");
     div.className = "review";
     div.innerHTML = `<strong>${a.correct ? "✓" : "✗"} ${q.question}</strong><small>Correct answer: ${String.fromCharCode(65+q.answer)}. ${q.options[q.answer]}<br>${q.explanation}</small>`;
