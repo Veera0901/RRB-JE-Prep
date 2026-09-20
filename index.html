@@ -126,17 +126,62 @@
       </div>
     </section>
 
+
     <section id="result-screen" class="hidden">
-      <div class="card result-card">
-        <button id="result-home-btn" class="text-btn">← Back to Tests</button>
-        <p class="eyebrow">Test Complete</p>
-        <h2 id="result-title"></h2>
-        <p id="result-summary"></p>
-        <div id="review-list" class="review-list"></div>
-        <button id="retry-btn" class="primary">Retry Incorrect</button>
-        <button id="new-btn" class="secondary">Start Test Again</button>
+      <div class="result-page">
+        <div class="result-toolbar">
+          <button id="result-home-btn" class="text-btn">← Back to Tests</button>
+          <span class="result-label">Performance Diagnostic</span>
+        </div>
+        <section class="result-hero card">
+          <div class="result-hero-main">
+            <div>
+              <p class="eyebrow">Test Complete</p>
+              <h2 id="result-test-name">Current Affairs Test</h2>
+              <p id="result-summary">15 attempted • 12 correct • 80% accuracy</p>
+            </div>
+            <div class="score-ring" id="score-ring" aria-label="Score">
+              <div class="score-ring-inner"><strong id="result-score">0/15</strong><span>Score</span></div>
+            </div>
+          </div>
+          <div class="result-stats">
+            <div class="result-stat correct"><span>Correct</span><strong id="stat-correct">0</strong></div>
+            <div class="result-stat wrong"><span>Incorrect</span><strong id="stat-wrong">0</strong></div>
+            <div class="result-stat skipped"><span>Unattempted</span><strong id="stat-unanswered">0</strong></div>
+            <div class="result-stat neutral"><span>Accuracy</span><strong id="stat-accuracy">0%</strong></div>
+          </div>
+        </section>
+        <section class="analysis-grid">
+          <article class="analysis-card card">
+            <div class="section-head">
+              <div><p class="eyebrow">Topic Analysis</p><h3>Where you stand</h3></div>
+              <span class="section-note">Based on this test</span>
+            </div>
+            <div id="topic-analysis" class="topic-analysis"></div>
+          </article>
+          <article class="analysis-card card">
+            <div class="section-head"><div><p class="eyebrow">Revision Focus</p><h3>Topics to revisit</h3></div></div>
+            <div id="revision-focus" class="revision-focus"></div>
+          </article>
+        </section>
+        <section class="review-card card">
+          <div class="section-head review-head">
+            <div><p class="eyebrow">Question Review</p><h3>Answer-by-answer analysis</h3></div>
+            <div class="review-filters" role="tablist" aria-label="Question review filter">
+              <button type="button" class="filter-btn active" data-filter="all">All</button>
+              <button type="button" class="filter-btn" data-filter="wrong">Incorrect</button>
+              <button type="button" class="filter-btn" data-filter="unanswered">Unattempted</button>
+            </div>
+          </div>
+          <div id="review-list" class="review-list"></div>
+        </section>
+        <div class="result-actions">
+          <button id="retry-btn" class="primary">Retry Incorrect</button>
+          <button id="review-answers-btn" class="secondary">Review Answers</button>
+          <button id="new-btn" class="secondary">Start Test Again</button>
+        </div>
       </div>
-    </section>
+    </section>ion>
   </main>
 
   <script src="js/questions.js"></script>
