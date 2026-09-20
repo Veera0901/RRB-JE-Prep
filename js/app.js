@@ -9,9 +9,9 @@ let activeTestBank = questionBank;
 const $ = (id) => document.getElementById(id);
 const home = $("home-screen"), quiz = $("quiz-screen"), result = $("result-screen");
 
-$("test-1-btn").addEventListener("click", () => startTest(questionBank));
-$("test-2-btn").addEventListener("click", () => startTest(test2Questions));
-$("test-3-btn").addEventListener("click", () => startTest(test3Questions));
+$("test-1-btn").addEventListener("click", () => startTest(questionBank, "TEST 01"));
+$("test-2-btn").addEventListener("click", () => startTest(test2Questions, "TEST 02"));
+$("test-3-btn").addEventListener("click", () => startTest(test3Questions, "TEST 03"));
 $("home-btn").addEventListener("click", showHome);
 $("result-home-btn").addEventListener("click", showHome);
 $("previous-btn").addEventListener("click", previousQuestion);
@@ -26,7 +26,7 @@ $("retry-btn").addEventListener("click", () => {
 });
 $("new-btn").addEventListener("click", () => startTest(activeTestBank));
 
-function startTest(bank) {
+function startTest(bank, testLabel = "") {
   activeTestBank = bank;
   questions = [...bank];
   index = 0;
@@ -37,6 +37,9 @@ function startTest(bank) {
   home.classList.add("hidden");
   result.classList.add("hidden");
   quiz.classList.remove("hidden");
+  $("exam-subtitle").textContent = testLabel
+    ? `CBT-1 • CURRENT AFFAIRS • ${testLabel} • PRACTICE`
+    : "CBT-1 • CURRENT AFFAIRS • PRACTICE";
   window.scrollTo({top:0, behavior:"smooth"});
   render();
 }
@@ -68,9 +71,17 @@ function render() {
   box.innerHTML = "";
   q.options.forEach((option, i) => {
     const button = document.createElement("button");
+    button.type = "button";
     button.className = "option";
     if (selected === i) button.classList.add("selected");
-    button.textContent = `${String.fromCharCode(65+i)}. ${option}`;
+    const marker = document.createElement("span");
+    marker.className = "option-radio";
+    marker.setAttribute("aria-hidden", "true");
+    const text = document.createElement("span");
+    text.className = "option-text";
+    text.textContent = `${String.fromCharCode(65+i)}. ${option}`;
+    button.append(marker, text);
+    button.setAttribute("aria-pressed", selected === i ? "true" : "false");
     button.addEventListener("click", () => selectOption(i));
     box.appendChild(button);
   });
@@ -98,7 +109,11 @@ function renderPalette() {
 
 function selectOption(choice) {
   selected = choice;
-  [...$("options").children].forEach((el, i) => el.classList.toggle("selected", i === choice));
+  [...$("options").children].forEach((el, i) => {
+    const isSelected = i === choice;
+    el.classList.toggle("selected", isSelected);
+    el.setAttribute("aria-pressed", isSelected ? "true" : "false");
+  });
 }
 
 function clearSelection() {
