@@ -5,6 +5,7 @@ let selected = null;
 let answers = [];
 let marked = new Set();
 let activeTestBank = questionBank;
+let activeTestLabel = "TEST 01";
 
 const $ = (id) => document.getElementById(id);
 const home = $("home-screen");
@@ -32,10 +33,21 @@ $("retry-btn").addEventListener("click", () => {
 });
 
 $("new-btn").addEventListener("click", () => startTest(activeTestBank));
+$("review-answers-btn").addEventListener("click", () => {
+  document.querySelector(".review-card").scrollIntoView({behavior:"smooth", block:"start"});
+});
+document.querySelectorAll(".filter-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach((item) => item.classList.remove("active"));
+    btn.classList.add("active");
+    renderReviewList(btn.dataset.filter || "all");
+  });
+});
 
 function startTest(bank, testLabel = "") {
   activeTestBank = bank;
   questions = [...bank];
+  activeTestLabel = testLabel || "CURRENT AFFAIRS";
   index = 0;
   score = 0;
   selected = null;
@@ -72,6 +84,9 @@ function render() {
   $("review-btn").classList.toggle("marked", marked.has(q.id));
   $("previous-btn").disabled = index === 0;
   $("previous-btn").style.opacity = index === 0 ? ".55" : "1";
+  $("save-next-btn").innerHTML = index === questions.length - 1
+    ? 'Submit Test <span aria-hidden="true">✓</span>'
+    : 'Save &amp; Next <span aria-hidden="true">→</span>';
 
   const box = $("options");
   box.innerHTML = "";
@@ -402,6 +417,10 @@ function startTopicPractice(topic) {
 }
 
 function showHome() {
+  if (!quiz.classList.contains("hidden") && answers.length > 0) {
+    const leave = window.confirm("Leave this test? Your current answers will be cleared.");
+    if (!leave) return;
+  }
   quiz.classList.add("hidden");
   result.classList.add("hidden");
   home.classList.remove("hidden");
@@ -413,30 +432,119 @@ function showResult() {
   result.classList.remove("hidden");
 
   const attempted = answers.length;
-  const accuracy = attempted ? Math.round((score / attempted) * 100) : 0;
+  const correctCount = answers.filter((a) => a.correct).length;
+  const wrongCount = attempted - correctCount;
+  const unanswered = questions.length - attempted;
+  const accuracy = attempted ? Math.round((correctCount / attempted) * 100) : 0;
+  const angle = Math.round((correctCount / Math.max(questions.length, 1)) * 360);
 
-  $("result-title").textContent = \`${score}/${questions.length}\`;
-  $("result-summary").textContent =
-    \`${attempted} attempted • ${score} correct • ${accuracy}% accuracy\`;
+  $("result-test-name").textContent = activeTestLabel + " • CURRENT AFFAIRS";
+  $("result-score").textContent = correctCount + "/" + questions.length;
+  $("result-summary").textContent = attempted + " attempted • " + correctCount + " correct • " + accuracy + "% accuracy";
+  $("stat-correct").textContent = correctCount;
+  $("stat-wrong").textContent = wrongCount;
+  $("stat-unanswered").textContent = unanswered;
+  $("stat-accuracy").textContent = accuracy + "%";
+  $("score-ring").style.setProperty("--score-angle", angle + "deg");
 
+  renderTopicAnalysis();
+  renderRevisionFocus();
+  renderReviewList("all");
+}
+
+function renderTopicAnalysis() {
+  const stats = {};
+  questions.forEach((q) => {
+    const topic = q.topic || "General";
+    if (!stats[topic]) stats[topic] = {total:0, correct:0, wrong:0, unanswered:0};
+    stats[topic].total++;
+    const answer = answers.find((a) => a.id === q.id);
+    if (!answer) stats[topic].unanswered++;
+    else if (answer.correct) stats[topic].correct++;
+    else stats[topic].wrong++;
+  });
+  const box = $("topic-analysis");
+  box.innerHTML = "";
+  Object.entries(stats).forEach(([topic, s]) => {
+    const accuracy = s.total ? Math.round((s.correct / s.total) * 100) : 0;
+    let status = "Revisit"; let cls = "revisit";
+    if (s.correct === s.total) { status = "Strong"; cls = "strong"; }
+    else if (accuracy >= 60) { status = "Improve"; cls = "improve"; }
+    const row = document.createElement("div");
+    row.className = "topic-row";
+    row.innerHTML = "<div class=\"topic-name\">" + topic + "</div>"
+      + "<div class=\"topic-cell\"><strong>" + s.correct + "</strong>Correct</div>"
+      + "<div class=\"topic-cell\"><strong>" + s.total + "</strong>Total</div>"
+      + "<div class=\"mini-progress\" title=\"" + accuracy + "% accuracy\"><span style=\"width:" + accuracy + "%\"></span></div>"
+      + "<div class=\"topic-status " + cls + "\">" + status + "</div>";
+    box.appendChild(row);
+  });
+}
+
+function renderRevisionFocus() {
+  const box = $("revision-focus");
+  box.innerHTML = "";
+  const stats = {};
+  questions.forEach((q) => {
+    const answer = answers.find((a) => a.id === q.id);
+    if (!answer || answer.correct) return;
+    const topic = q.topic || "General";
+    if (!stats[topic]) stats[topic] = {wrong:0, questions:[]};
+    stats[topic].wrong++;
+    stats[topic].questions.push(q.question);
+  });
+  const entries = Object.entries(stats);
+  if (!entries.length) {
+    box.innerHTML = "<div class=\"revision-empty\">No incorrect topics in this attempt. Review the answer key once before the next test.</div>";
+    return;
+  }
+  entries.forEach(([topic, s]) => {
+    const item = document.createElement("div");
+    item.className = "revision-item";
+    const examples = s.questions.slice(0,2).join(" ");
+    item.innerHTML = "<strong>" + topic + "</strong><span>" + examples + "</span><div class=\"revision-metric\">" + s.wrong + " question(s) to review</div>";
+    box.appendChild(item);
+  });
+}
+
+function renderReviewList(filter = "all") {
   const list = $("review-list");
   list.innerHTML = "";
-
-  questions.forEach(q => {
-    const a = answers.find(x => x.id === q.id);
-    if (!a) return;
-
-    const div = document.createElement("div");
-    div.className = "review";
-
-    div.innerHTML = \`
-      <strong>${a.correct ? "✓" : "✕"} ${q.question}</strong>
-      <small>
-        Your answer: ${String.fromCharCode(65 + a.choice)}. ${q.options[a.choice]}<br>
-        Correct answer: ${String.fromCharCode(65 + q.answer)}. ${q.options[q.answer]}<br>
-        ${q.explanation}
-      </small>\`;
-
-    list.appendChild(div);
+  const rows = questions.map((q, i) => {
+    const answer = answers.find((a) => a.id === q.id);
+    const status = !answer ? "unanswered" : answer.correct ? "correct" : "wrong";
+    return {q, i, answer, status};
+  }).filter((row) => filter === "all" || row.status === filter);
+  if (!rows.length) {
+    list.innerHTML = "<div class=\"review-empty\">No questions match this filter.</div>";
+    return;
+  }
+  rows.forEach(({q, i, answer, status}) => {
+    const item = document.createElement("article");
+    item.className = "review-item";
+    const head = document.createElement("div");
+    head.className = "review-item-head";
+    head.innerHTML = "<span class=\"review-qno\">Question " + (i + 1) + " • " + q.topic + "</span><span class=\"review-badge " + status + "\">" + status + "</span>";
+    const question = document.createElement("div");
+    question.className = "review-question";
+    question.textContent = q.question;
+    const grid = document.createElement("div");
+    grid.className = "review-answer-grid";
+    const userBox = document.createElement("div");
+    userBox.className = "answer-box user" + (status === "wrong" ? " wrong" : "");
+    const userValue = answer ? String.fromCharCode(65 + answer.choice) + ". " + q.options[answer.choice] : "Not attempted";
+    userBox.innerHTML = "<span>Your answer</span>" + userValue;
+    const correctBox = document.createElement("div");
+    correctBox.className = "answer-box correct";
+    correctBox.innerHTML = "<span>Correct answer</span>" + String.fromCharCode(65 + q.answer) + ". " + q.options[q.answer];
+    grid.append(userBox, correctBox);
+    const explanation = document.createElement("div");
+    explanation.className = "review-explanation";
+    explanation.textContent = q.explanation || "Review the concept from the detailed explanation.";
+    item.append(head, question, grid, explanation);
+    item.addEventListener("click", () => {
+      result.classList.add("hidden"); quiz.classList.remove("hidden"); index = i; render(); window.scrollTo({top:0, behavior:"smooth"});
+    });
+    list.appendChild(item);
   });
 }
