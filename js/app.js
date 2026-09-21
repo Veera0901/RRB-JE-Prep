@@ -15,6 +15,7 @@ const result = $("result-screen");
 $("test-1-btn").addEventListener("click", () => startTest(questionBank, "TEST 01"));
 $("test-2-btn").addEventListener("click", () => startTest(test2Questions, "TEST 02"));
 $("test-3-btn").addEventListener("click", () => startTest(test3Questions, "TEST 03"));
+$("test-4-btn").addEventListener("click", () => startTest(test4Questions, "TEST 04"));
 $("home-btn").addEventListener("click", showHome);
 $("result-home-btn").addEventListener("click", showHome);
 $("previous-btn").addEventListener("click", previousQuestion);
