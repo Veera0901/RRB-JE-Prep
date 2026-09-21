@@ -1,10 +1,10 @@
-let questions = [...questionBank];
+let questions = [...test01Questions];
 let index = 0;
 let score = 0;
 let selected = null;
 let answers = [];
 let marked = new Set();
-let activeTestBank = questionBank;
+let activeTestBank = test01Questions;
 let activeTestLabel = "TEST 01";
 
 const $ = (id) => document.getElementById(id);
@@ -12,10 +12,10 @@ const home = $("home-screen");
 const quiz = $("quiz-screen");
 const result = $("result-screen");
 
-$("test-1-btn").addEventListener("click", () => startTest(questionBank, "TEST 01"));
-$("test-2-btn").addEventListener("click", () => startTest(test2Questions, "TEST 02"));
-$("test-3-btn").addEventListener("click", () => startTest(test3Questions, "TEST 03"));
-$("test-4-btn").addEventListener("click", () => startTest(test4Questions, "TEST 04"));
+$("test-1-btn").addEventListener("click", () => startTest(test01Questions, "TEST 01"));
+$("test-2-btn").addEventListener("click", () => startTest(test02Questions, "TEST 02"));
+$("test-3-btn").addEventListener("click", () => startTest(test03Questions, "TEST 03"));
+$("test-4-btn").addEventListener("click", () => startTest(test04Questions, "TEST 04"));
 $("home-btn").addEventListener("click", showHome);
 $("result-home-btn").addEventListener("click", showHome);
 $("previous-btn").addEventListener("click", previousQuestion);
@@ -115,7 +115,7 @@ function render() {
     applyValidationVisuals(q, saved.choice);
     showValidation(q, saved.choice, saved.correct, false);
   } else {
-    $("explanation-btn").disabled = true;
+    $("explanation-btn").disabled = false;
   }
 
   renderPalette();
@@ -249,16 +249,57 @@ function submitAssessment() {
 }
 
 function toggleExplanation() {
-  const saved = answers.find(a => a.id === questions[index].id);
-  if (!saved) return;
-
+  const q = questions[index];
   const details = $("feedback-details");
   const isHidden = details.classList.contains("hidden");
+
+  if (isHidden) {
+    const saved = answers.find(a => a.id === q.id);
+    if (!saved) showExplanation(q);
+  }
 
   details.classList.toggle("hidden", !isHidden);
   $("explanation-btn").textContent = isHidden
     ? "Hide Detailed Explanation"
     : "◉ View Detailed Explanation";
+}
+
+function showExplanation(q) {
+  const feedback = $("feedback");
+
+  feedback.classList.remove("hidden", "is-correct", "is-wrong");
+  $("feedback-status").textContent = "Explanation available";
+  $("feedback-answer").textContent =
+    `${String.fromCharCode(65 + q.answer)}. ${q.options[q.answer]}`;
+
+  $("feedback-explanation").textContent =
+    q.explanation || "Review the concept and related topics.";
+
+  if (q.trick) {
+    $("feedback-trick").textContent = q.trick;
+    $("feedback-trick-wrap").classList.remove("hidden");
+  } else {
+    $("feedback-trick-wrap").classList.add("hidden");
+  }
+
+  const topics = q.relatedTopics || [q.topic];
+  const topicBox = $("related-topics");
+  topicBox.innerHTML = "";
+
+  topics.forEach(topic => {
+    const chip = document.createElement("button");
+    chip.className = "topic-chip";
+    chip.type = "button";
+    chip.textContent = topic;
+    chip.addEventListener("click", () => showRelatedContent(topic));
+    topicBox.appendChild(chip);
+  });
+
+  $("topic-status").textContent = getTopicStatus(q.topic);
+  showRelatedContent(topics[0] || q.topic);
+  $("feedback-details").classList.add("hidden");
+  $("explanation-btn").disabled = false;
+  $("explanation-btn").textContent = "◉ View Detailed Explanation";
 }
 
 function showValidation(q, choice, correct, recordHistory) {
@@ -320,7 +361,7 @@ function resetFeedback() {
   $("related-content").innerHTML = "";
   $("related-content").classList.add("hidden");
   $("topic-status").textContent = "";
-  $("explanation-btn").disabled = true;
+  $("explanation-btn").disabled = false;
   $("explanation-btn").textContent = "◉ View Detailed Explanation";
 }
 
