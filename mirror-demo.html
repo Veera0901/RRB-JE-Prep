@@ -55,7 +55,9 @@ input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
 <div id="mirrorRing" aria-hidden="true"></div><div class="camera-label">Original</div><div id="tip">Place your face/object inside the circle • move closer and farther</div>
 <button id="start">📷 Start camera</button>
 <section class="controls">
- <div class="segment"><button id="concave" class="active">Concave</button><button id="convex">Convex</button></div>
+ <div class="segment" id="systemMode"><button id="mirrorMode" class="active">Mirror</button><button id="lensMode">Lens</button></div>
+ <div class="segment" id="mirrorTypes"><button id="concave" class="active">Concave</button><button id="convex">Convex</button></div>
+ <div class="segment" id="lensTypes" style="display:none"><button id="lensConvex" class="active">Convex lens</button><button id="lensConcave">Concave lens</button></div>
  <div class="tools"><button class="tool" id="flip">↔ Camera</button><button class="tool" id="reset">Reset mirror</button></div>
  <label><span>Object position</span><span id="distVal">C · 2F</span></label>
  <div class="points" id="points" aria-label="Optical object position">
@@ -74,8 +76,11 @@ const video=document.getElementById('camera'),canvas=document.getElementById('mi
 const start=document.getElementById('start'),dot=document.getElementById('dot'),statusEl=document.getElementById('status');
 const curv=document.getElementById('curv'),curvVal=document.getElementById('curvVal'),distVal=document.getElementById('distVal'),lesson=document.getElementById('lesson');
 const points=document.querySelectorAll('.point');
+const mirrorMode=document.getElementById('mirrorMode'),lensMode=document.getElementById('lensMode');
+const mirrorTypes=document.getElementById('mirrorTypes'),lensTypes=document.getElementById('lensTypes');
+const lensConvex=document.getElementById('lensConvex'),lensConcave=document.getElementById('lensConcave');
 const gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});
-let stream=null,facing='user',mode=0,mirror={x:.5,y:.47,r:.28},drag=null,tex,program,raf=0,objectDistance=2,objectPosition='C',videoTextureReady=false,loc={};
+let stream=null,facing='user',system='mirror',mode=0,mirror={x:.5,y:.47,r:.28},drag=null,tex,program,raf=0,objectDistance=2,objectPosition='C',videoTextureReady=false,loc={};
 
 const VS=`
 attribute vec2 p; varying vec2 uv;
@@ -135,9 +140,19 @@ function draw(){
  if(!videoTextureReady){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);videoTextureReady=true;}else{gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,video);}
  const q=+curv.value/100,rect=canvas.getBoundingClientRect();
  const aspect=rect.width/rect.height;
- let scale=1.0,inverted=0.0;
+ let scale=1.0,inverted=0.0; let lensVirtual=0.0;
  const f=1.0,u=objectDistance;
- if(mode===0){
+ if(system==='lens'){ 
+   const isConvex=mode===0;
+   if(isConvex){
+     if(objectPosition==='infinity'){scale=.22;inverted=1.0;}
+     else if(objectPosition==='C'){scale=1.0;inverted=1.0;}
+     else if(objectPosition==='F'){scale=2.6;inverted=1.0;}
+     else {scale=2.1;inverted=0.0;lensVirtual=1.0;}
+   }else{
+     scale=.62; inverted=0.0; lensVirtual=1.0;
+   }
+ } else if(mode===0){
    if(objectPosition==='infinity'){scale=.28;inverted=1.0;}
    else if(objectPosition==='C'){scale=1.0;inverted=1.0;}
    else if(objectPosition==='F'){scale=2.8;inverted=1.0;}
@@ -158,7 +173,7 @@ function draw(){
  gl.uniform1f(loc.imageScale,scale);
  gl.uniform1f(loc.invertY,inverted);
  gl.uniform1f(loc.videoAspect,video.videoWidth/video.videoHeight);
-gl.uniform1f(loc.convexMode,mode===1?1.0:0.0);
+gl.uniform1f(loc.convexMode,system==='mirror' ? (mode===1?1.0:0.0) : (mode===0?0.0:1.0));
  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 }
 function videoFrame(){draw();if(video.requestVideoFrameCallback)video.requestVideoFrameCallback(videoFrame);else raf=requestAnimationFrame(videoFrame)}
