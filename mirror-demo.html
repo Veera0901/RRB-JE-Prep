@@ -3,50 +3,151 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#090b10">
-<title>Mirror Lab — Concave & Convex</title>
+<meta name="theme-color" content="#080a0f">
+<title>Mirror Lab — Optical Experiment</title>
 <style>
-:root{--bg:#090b10;--panel:rgba(17,21,29,.86);--line:rgba(255,255,255,.13);--text:#f7f8fb;--muted:#aab2c0;--accent:#7c6cff}
+:root{
+ --bg:#080a0f;--panel:#11151d;--panel2:#181d27;--line:rgba(255,255,255,.12);
+ --text:#f7f8fb;--muted:#9ba5b5;--accent:#7c6cff;--good:#35d58a;
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-#app{height:100%;position:relative}
-#camera{position:absolute;top:136px;right:12px;width:34vw;max-width:150px;height:45vw;max-height:200px;object-fit:cover;background:#111;border:1px solid rgba(255,255,255,.32);border-radius:18px;z-index:5;box-shadow:0 10px 30px #0009;transform:scaleX(-1)}
-.rayGraph{position:absolute;top:136px;left:12px;width:calc(66vw - 18px);max-width:255px;height:45vw;max-height:200px;z-index:5;border:1px solid rgba(255,255,255,.2);border-radius:18px;background:rgba(8,11,17,.88);backdrop-filter:blur(12px);box-shadow:0 10px 30px #0007;padding:9px;box-sizing:border-box}.rayGraphTitle{font-size:11px;font-weight:850;color:#fff;margin-bottom:3px}.rayGraph svg{width:100%;height:calc(100% - 18px);display:block}.rayLabel{font-size:10px;fill:#aab2c0}.rayMain{stroke:#eef2f7;stroke-width:1.2}.rayAux{stroke:#7c6cff;stroke-width:1;stroke-dasharray:3 2}.rayObj{stroke:#fff;stroke-width:2}.rayImg{stroke:#39d98a;stroke-width:2}.camera-label{position:absolute;top:143px;right:20px;z-index:6;padding:4px 7px;border-radius:7px;background:rgba(0,0,0,.55);font-size:8px;font-weight:800;color:#fff;pointer-events:none;backdrop-filter:blur(8px)}
-#mirrorGL{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
-#mirrorRing{position:absolute;left:22%;top:19%;width:56%;aspect-ratio:1;border:2px solid rgba(255,255,255,.82);border-radius:50%;box-shadow:0 0 0 5px rgba(255,255,255,.06),inset 0 0 35px rgba(124,108,255,.16);pointer-events:none;z-index:2}#shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent 18%,transparent 68%,rgba(0,0,0,.58))}
-header{position:absolute;top:0;left:0;right:0;height:74px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:5}
-.title{font-size:17px;font-weight:850;letter-spacing:-.2px}.subtitle{font-size:10px;color:var(--muted);margin-top:2px}
-.status{display:flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(10,12,17,.55);backdrop-filter:blur(12px);font-size:11px;font-weight:800}
-.dot{width:7px;height:7px;border-radius:50%;background:#7d8795}
-.dot.live{background:#39d98a;box-shadow:0 0 9px #39d98a}
-#start{position:absolute;z-index:7;left:50%;top:39%;transform:translate(-50%,-50%);border:0;border-radius:18px;padding:15px 22px;background:#fff;color:#111;font-weight:850;font-size:15px;box-shadow:0 12px 40px #0009}
-#start.hide{display:none}
-#tip{position:absolute;top:84px;left:50%;transform:translateX(-50%);z-index:4;padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.48);backdrop-filter:blur(10px);font-size:10px;white-space:nowrap;color:#eef1f7;pointer-events:none}
-.controls{position:absolute;left:10px;right:10px;bottom:10px;z-index:6;padding:10px;max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:20px;background:var(--panel);backdrop-filter:blur(18px);box-shadow:0 15px 45px #0008}
-.segment{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px;margin-bottom:7px;border-radius:13px;background:rgba(255,255,255,.07)}
-button{border:0;color:#fff;background:transparent;border-radius:10px;padding:11px 8px;min-height:42px;font-size:12px;font-weight:850;touch-action:manipulation}
-.segment button.active{background:#fff;color:#111}
-.tools{display:flex;gap:7px;margin-top:6px}.sectionTitle{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:850;margin:7px 2px 5px}.people{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}.people button{background:rgba(255,255,255,.06);border:1px solid var(--line)}.people button.active{background:#fff;color:#111}
-.tool{flex:1;background:rgba(255,255,255,.08);border:1px solid var(--line)}
-.points{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:7px;padding:8px 6px 7px;border:1px solid rgba(255,255,255,.18);border-radius:16px;background:rgba(255,255,255,.075);box-shadow:inset 0 1px rgba(255,255,255,.05)}
-.points:before{content:"";position:absolute;left:9%;right:9%;top:31px;height:2px;background:rgba(255,255,255,.25);border-radius:2px}
-.point{position:relative;z-index:2;min-height:52px;background:rgba(255,255,255,.045);border:1px solid transparent;border-radius:12px;padding:7px 3px 6px;font-size:15px;color:#d2d7e0}
-.point:after{content:"";display:block;width:10px;height:10px;margin:7px auto 0;border-radius:50%;background:#59616f;box-shadow:0 0 0 3px rgba(89,97,111,.16)}
-.point.active{background:#fff;color:#111;border-color:#fff;box-shadow:0 5px 16px rgba(0,0,0,.24)}
-.point.active:after{background:#111;box-shadow:0 0 0 3px rgba(17,17,17,.14)}
-.point small{display:block;margin-top:1px;font-size:8px;font-weight:750;letter-spacing:.1px;color:inherit;opacity:.62}
-.point.active small{opacity:.7}
-.tool:active,.point:active{transform:scale(.97)}
-label{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:10px;font-weight:700}
-label span:last-child{color:#fff;font-size:11px;font-weight:850}
-input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
-#lesson{margin-top:7px;text-align:center;font-size:10px;color:#c1c7d2;line-height:1.35}
+body{overscroll-behavior:none}
+button,select,input{font:inherit}
+button{border:0;color:var(--text);touch-action:manipulation}
+#app{position:relative;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 35%,#151923 0,#080a0f 55%,#06070b 100%)}
 
-.topSelectors{position:absolute;top:76px;left:12px;right:12px;height:50px;z-index:8;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.topSelect{margin:0;padding:6px 9px;border:1px solid var(--line);border-radius:13px;background:rgba(18,21,29,.94);backdrop-filter:blur(14px);box-shadow:0 8px 24px #0006;box-sizing:border-box}
-.topSelect span{display:block;margin:0 0 2px;color:var(--muted);font-size:7px;text-transform:uppercase;letter-spacing:.08em;font-weight:850}
-.topSelect select{width:100%;height:24px;border:0;outline:0;border-radius:8px;background:rgba(255,255,255,.06);color:#fff;font-size:11px;font-weight:850;padding:0 5px}
-.topSelect select option{background:#181b22;color:#fff}
+/* Optical stage */
+#mirrorGL{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.42) 0%,transparent 25%,transparent 66%,rgba(0,0,0,.72) 100%)}
+#mirrorRing{
+ position:absolute;left:50%;top:45%;width:min(76vw,420px);aspect-ratio:1;
+ transform:translate(-50%,-50%);border:2px solid rgba(255,255,255,.86);border-radius:50%;
+ box-shadow:0 0 0 5px rgba(255,255,255,.055),0 0 42px rgba(124,108,255,.14),inset 0 0 40px rgba(124,108,255,.12);
+ pointer-events:none;z-index:2
+}
+
+/* Header */
+header{
+ position:absolute;top:0;left:0;right:0;height:68px;padding:12px 16px 8px;
+ display:flex;align-items:center;justify-content:space-between;z-index:20;
+ background:linear-gradient(180deg,rgba(8,10,15,.94),rgba(8,10,15,.72),transparent)
+}
+.title{font-size:18px;font-weight:900;letter-spacing:-.35px}
+.subtitle{margin-top:2px;font-size:10px;color:var(--muted)}
+.status{
+ display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid var(--line);
+ border-radius:999px;background:rgba(17,21,29,.8);font-size:11px;font-weight:850;backdrop-filter:blur(12px)
+}
+.dot{width:8px;height:8px;border-radius:50%;background:#687180;box-shadow:0 0 0 4px rgba(104,113,128,.12)}
+.dot.live{background:#35d58a;box-shadow:0 0 0 4px rgba(53,213,138,.13),0 0 12px rgba(53,213,138,.45)}
+
+/* Top selectors */
+.topBar{
+ position:absolute;top:72px;left:12px;right:12px;z-index:18;
+ display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px
+}
+.topSelect{
+ min-width:0;margin:0;padding:7px 9px;border:1px solid var(--line);border-radius:13px;
+ background:rgba(17,21,29,.91);backdrop-filter:blur(16px);box-shadow:0 8px 24px rgba(0,0,0,.32)
+}
+.topSelect span{display:block;margin-bottom:3px;color:var(--muted);font-size:7px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+.topSelect select{
+ width:100%;height:25px;padding:0 5px;border:0;outline:0;border-radius:8px;
+ background:rgba(255,255,255,.07);color:#fff;font-size:11px;font-weight:850
+}
+.topSelect select option{background:#171b23;color:#fff}
+
+/* Stage cards */
+.rayGraph{
+ position:absolute;top:130px;left:12px;width:calc(62% - 8px);height:190px;max-width:275px;
+ z-index:10;padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:18px;
+ background:rgba(8,11,17,.88);backdrop-filter:blur(16px);box-shadow:0 12px 32px rgba(0,0,0,.38)
+}
+.rayGraphTitle{font-size:11px;font-weight:900;margin-bottom:4px}
+.rayGraph svg{display:block;width:100%;height:160px}
+.rayLabel{font-size:10px;fill:#aab2c0}.rayMain{stroke:#eef2f7;stroke-width:1.2}
+.rayAux{stroke:#7c6cff;stroke-width:1;stroke-dasharray:3 2}.rayObj{stroke:#fff;stroke-width:2}.rayImg{stroke:#39d98a;stroke-width:2}
+
+#camera{
+ position:absolute;top:130px;right:12px;width:34%;max-width:150px;height:190px;object-fit:cover;
+ background:#111;border:1px solid rgba(255,255,255,.2);border-radius:18px;z-index:10;
+ box-shadow:0 12px 32px rgba(0,0,0,.42);transform:scaleX(-1)
+}
+.camera-label{
+ position:absolute;top:139px;right:20px;z-index:11;padding:4px 7px;border-radius:8px;
+ background:rgba(0,0,0,.55);font-size:8px;font-weight:900;pointer-events:none;backdrop-filter:blur(8px)
+}
+#tip{
+ position:absolute;left:50%;top:calc(45% + min(38vw,190px));transform:translateX(-50%);
+ z-index:5;width:max-content;max-width:88%;text-align:center;font-size:9px;color:#b9c0cb;
+ padding:5px 9px;border-radius:999px;background:rgba(8,10,15,.58);backdrop-filter:blur(8px)
+}
+#start{
+ position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);z-index:16;
+ padding:14px 21px;border-radius:17px;background:#fff;color:#111;font-size:14px;font-weight:900;
+ box-shadow:0 14px 38px rgba(0,0,0,.48)
+}
+#start.hide{display:none}
+
+/* Bottom sheet */
+.controls{
+ position:absolute;left:10px;right:10px;bottom:10px;z-index:15;
+ max-height:43vh;overflow:auto;padding:13px 12px 15px;
+ border:1px solid rgba(255,255,255,.12);border-radius:22px;
+ background:rgba(15,19,27,.94);backdrop-filter:blur(22px);box-shadow:0 18px 50px rgba(0,0,0,.58)
+}
+.sheetHandle{width:34px;height:4px;margin:0 auto 9px;border-radius:99px;background:rgba(255,255,255,.2)}
+.sectionTitle{
+ margin:0 2px 6px;color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.09em;text-transform:uppercase
+}
+.segment{
+ display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:10px;
+ border-radius:14px;background:rgba(255,255,255,.055)
+}
+.segment button{
+ min-height:42px;border-radius:11px;background:transparent;font-size:12px;font-weight:900
+}
+.segment button.active{background:#fff;color:#111;box-shadow:0 4px 14px rgba(0,0,0,.22)}
+.tools{display:none}
+label.controlLabel{
+ display:flex;align-items:center;justify-content:space-between;margin:9px 2px 5px;
+ color:var(--muted);font-size:10px;font-weight:800
+}
+.controlLabel span:last-child{color:#fff;font-size:11px;font-weight:900}
+.points{
+ position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:5px;
+ border:1px solid rgba(255,255,255,.13);border-radius:16px;background:rgba(255,255,255,.045)
+}
+.points:before{
+ content:"";position:absolute;left:10%;right:10%;top:34px;height:2px;background:rgba(255,255,255,.2)
+}
+.point{
+ position:relative;z-index:2;min-height:58px;border:1px solid transparent;border-radius:12px;
+ background:rgba(255,255,255,.035);font-size:16px;font-weight:900;color:#d7dbe2
+}
+.point small{display:block;margin-top:1px;font-size:8px;font-weight:800;color:inherit;opacity:.6}
+.point:after{
+ content:"";display:block;width:10px;height:10px;margin:7px auto 0;border-radius:50%;
+ background:#59616f;box-shadow:0 0 0 3px rgba(89,97,111,.14)
+}
+.point.active{background:#fff;color:#111;box-shadow:0 5px 16px rgba(0,0,0,.25)}
+.point.active:after{background:#111;box-shadow:0 0 0 3px rgba(17,17,17,.12)}
+input[type=range]{width:100%;margin:4px 0 0;accent-color:var(--accent)}
+#lesson{
+ margin-top:9px;padding:8px 10px;border-radius:11px;text-align:center;
+ background:rgba(124,108,255,.08);border:1px solid rgba(124,108,255,.13);
+ color:#c5c9d3;font-size:9px;line-height:1.4
+}
+
+/* Compact phones */
+@media(max-width:390px){
+ header{padding-left:13px;padding-right:13px}.title{font-size:17px}
+ .topBar{left:9px;right:9px;gap:5px}.topSelect{padding:6px 7px}.topSelect span{font-size:6px}.topSelect select{font-size:10px}
+ .rayGraph{left:9px;top:126px;width:59%;height:176px;padding:8px}.rayGraph svg{height:148px}
+ #camera{top:126px;right:9px;width:35%;height:176px}.camera-label{top:135px;right:16px}
+ .controls{left:8px;right:8px;bottom:8px;padding:11px 10px 13px;max-height:44vh}
+}
 </style>
 </head>
 <body>
@@ -55,41 +156,55 @@ input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
 <canvas id="mirrorGL"></canvas>
 <div id="shade"></div>
 <header>
- <div><div class="title">Mirror Lab</div><div class="subtitle">Realtime curved-mirror experiment</div></div>
+ <div><div class="title">Mirror Lab</div><div class="subtitle">Realtime optical experiment</div></div>
  <div class="status"><span id="dot" class="dot"></span><span id="status">Camera off</span></div>
 </header>
-<div class="topSelectors">
+
+<div class="topBar">
  <label class="topSelect"><span>Optical device</span><select id="systemSelect" aria-label="Optical device"><option value="mirror">Mirror</option><option value="lens">Lens</option></select></label>
  <label class="topSelect"><span>View</span><select id="viewSelect" aria-label="View"><option value="person">👤 People focus</option><option value="scene">🌐 Full scene</option></select></label>
  <label class="topSelect"><span>Actions</span><select id="actionSelect" aria-label="Actions"><option value="">Choose</option><option value="camera">↔ Camera</option><option value="reset">↻ Reset</option></select></label>
 </div>
+
 <div id="mirrorRing" aria-hidden="true"></div>
-<div class="rayGraph" id="rayGraph"><div class="rayGraphTitle">Position & ray diagram</div><svg viewBox="0 0 180 112" aria-label="Optical position diagram">
-<line x1="8" y1="62" x2="172" y2="62" class="rayMain"/>
-<line x1="118" y1="15" x2="118" y2="98" class="rayMain"/>
-<circle cx="70" cy="62" r="3" fill="#7c6cff"/><circle cx="92" cy="62" r="3" fill="#7c6cff"/>
-<text x="65" y="76" class="rayLabel">F</text><text x="84" y="76" class="rayLabel">C / 2F</text>
-<path id="opticalSurface" d="M118 18 Q92 62 118 106" fill="none" stroke="#fff" stroke-width="3"/>
-<line id="rayObject" x1="42" y1="62" x2="42" y2="30" class="rayObj"/>
-<polygon id="objectArrow" points="42,26 38,34 46,34" fill="#fff"/>
-<line id="rayImage" x1="94" y1="62" x2="94" y2="38" class="rayImg"/>
-<polygon id="imageArrow" points="94,34 90,42 98,42" fill="#39d98a"/>
-<line x1="42" y1="30" x2="118" y2="30" class="rayAux"/>
-<line x1="118" y1="30" x2="94" y2="38" class="rayAux"/>
-<text id="rayType" x="8" y="13" class="rayLabel">Concave mirror</text></svg></div></div><div class="camera-label">Original</div><div id="tip">Place your face/object inside the circle • move closer and farther</div>
+
+<div class="rayGraph" id="rayGraph">
+ <div class="rayGraphTitle">Position & ray diagram</div>
+ <svg viewBox="0 0 180 112" aria-label="Optical position diagram">
+  <line x1="8" y1="62" x2="172" y2="62" class="rayMain"/>
+  <line x1="118" y1="15" x2="118" y2="98" class="rayMain"/>
+  <circle cx="70" cy="62" r="3" fill="#7c6cff"/><circle cx="92" cy="62" r="3" fill="#7c6cff"/>
+  <text x="65" y="76" class="rayLabel">F</text><text x="84" y="76" class="rayLabel">C / 2F</text>
+  <path id="opticalSurface" d="M118 18 Q92 62 118 106" fill="none" stroke="#fff" stroke-width="3"/>
+  <line id="rayObject" x1="42" y1="62" x2="42" y2="30" class="rayObj"/>
+  <polygon id="objectArrow" points="42,26 38,34 46,34" fill="#fff"/>
+  <line id="rayImage" x1="94" y1="62" x2="94" y2="38" class="rayImg"/>
+  <polygon id="imageArrow" points="94,34 90,42 98,42" fill="#39d98a"/>
+  <line x1="42" y1="30" x2="118" y2="30" class="rayAux"/>
+  <line x1="118" y1="30" x2="94" y2="38" class="rayAux"/>
+  <text id="rayType" x="8" y="13" class="rayLabel">Concave mirror</text>
+ </svg>
+</div>
+<div class="camera-label">Original</div>
+
+<div id="tip">Place your face or object inside the circle</div>
 <button id="start">📷 Start camera</button>
+
 <section class="controls">
- <div class="sectionTitle" id="deviceTypeTitle">Mirror type</div><div class="segment" id="mirrorTypes"><button id="concave" class="active">Concave</button><button id="convex">Convex</button></div>
+ <div class="sheetHandle"></div>
+ <div class="sectionTitle" id="deviceTypeTitle">Mirror type</div>
+ <div class="segment" id="mirrorTypes"><button id="concave" class="active">Concave</button><button id="convex">Convex</button></div>
  <div class="segment" id="lensTypes" style="display:none"><button id="lensConvex" class="active">Convex lens</button><button id="lensConcave">Concave lens</button></div>
 
- <label><span>Object position</span><span id="distVal">C · 2F</span></label>
+ <label class="controlLabel"><span>Object position</span><span id="distVal">C · 2F</span></label>
  <div class="points" id="points" aria-label="Optical object position">
   <button class="point" data-pos="infinity">∞<small>Far</small></button>
   <button class="point active" data-pos="C">C<small>2F</small></button>
   <button class="point" data-pos="F">F<small>Focus</small></button>
   <button class="point" data-pos="P">P<small>Pole</small></button>
  </div>
- <label><span>Curvature</span><span id="curvVal">55%</span></label>
+
+ <label class="controlLabel"><span>Curvature</span><span id="curvVal">55%</span></label>
  <input id="curv" type="range" min="15" max="90" value="55">
  <div id="lesson">At C (2F): real, inverted and same-size image forms at C.</div>
 </section>
