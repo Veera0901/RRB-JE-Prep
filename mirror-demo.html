@@ -81,10 +81,14 @@ void main(){
  vec2 q=d/radius; float r=length(q);
  float k=1.0/(1.0+strength*0.55*r*r);
  vec2 curved=q*k*imageScale;
- vec2 sampleUV=center+vec2(curved.x/aspect,curved.y);
+ vec2 sampleScreen=center+vec2(curved.x/aspect,curved.y);
  // Reflect around the mirror's own optical axis, not the screen centre.
- sampleUV.x=center.x-(sampleUV.x-center.x);
- if(invertY>0.5) sampleUV.y=center.y-(sampleUV.y-center.y);
+ sampleScreen.x=center.x-(sampleScreen.x-center.x);
+ if(invertY>0.5) sampleScreen.y=center.y-(sampleScreen.y-center.y);
+ // Match the phone's CSS object-fit: cover mapping.
+ vec2 sampleUV=sampleScreen;
+ if(aspect>videoAspect){ sampleUV.y=0.5+(sampleScreen.y-0.5)*(aspect/videoAspect); }
+ else { sampleUV.x=0.5+(sampleScreen.x-0.5)*(videoAspect/aspect); }
  sampleUV=clamp(sampleUV,vec2(0.001),vec2(0.999));
  vec4 c=texture2D(videoTex,sampleUV);
  float edge=smoothstep(1.0,.82,r); c.rgb*=mix(.84,1.05,edge);
@@ -102,6 +106,7 @@ function init(){
  tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+ loc.videoTex=gl.getUniformLocation(program,'videoTex');loc.center=gl.getUniformLocation(program,'center');loc.radius=gl.getUniformLocation(program,'radius');loc.strength=gl.getUniformLocation(program,'strength');loc.aspect=gl.getUniformLocation(program,'aspect');loc.imageScale=gl.getUniformLocation(program,'imageScale');loc.invertY=gl.getUniformLocation(program,'invertY');loc.videoAspect=gl.getUniformLocation(program,'videoAspect');
  gl.clearColor(0,0,0,0);
 }
 function updateRing(){const el=document.getElementById('mirrorRing');el.style.left=((mirror.x-mirror.r)*100)+'%';el.style.top=((mirror.y-mirror.r)*100)+'%';el.style.width=(mirror.r*2*100)+'%';} function resize(){const d=Math.min(devicePixelRatio||1,1.5),r=canvas.getBoundingClientRect();canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));draw()}
@@ -120,13 +125,14 @@ function draw(){
    else {const m=f/(f-u);scale=Math.min(2.6,Math.max(1.0,m));inverted=0.0;}
  }else{scale=Math.max(.12,Math.min(1.0,f/(u+f)));inverted=0.0;}
  scale*=1.0+q*.18;
- gl.uniform1i(gl.getUniformLocation(program,'videoTex'),0);
- gl.uniform2f(gl.getUniformLocation(program,'center'),mirror.x,1-mirror.y);
- gl.uniform1f(gl.getUniformLocation(program,'radius'),mirror.r);
- gl.uniform1f(gl.getUniformLocation(program,'strength'),q);
- gl.uniform1f(gl.getUniformLocation(program,'aspect'),aspect);
- gl.uniform1f(gl.getUniformLocation(program,'imageScale'),scale);
- gl.uniform1f(gl.getUniformLocation(program,'invertY'),inverted);
+ gl.uniform1i(loc.videoTex,0);
+ gl.uniform2f(loc.center,mirror.x,1-mirror.y);
+ gl.uniform1f(loc.radius,mirror.r);
+ gl.uniform1f(loc.strength,q);
+ gl.uniform1f(loc.aspect,aspect);
+ gl.uniform1f(loc.imageScale,scale);
+ gl.uniform1f(loc.invertY,inverted);
+ gl.uniform1f(loc.videoAspect,video.videoWidth/video.videoHeight);
  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 }
 function videoFrame(){draw();if(video.requestVideoFrameCallback)video.requestVideoFrameCallback(videoFrame);else raf=requestAnimationFrame(videoFrame)}
