@@ -314,6 +314,30 @@ function updateLesson(){
    else lesson.textContent='At P: virtual, upright and magnified image forms behind the mirror.';
  }
 }
+function configurePositions(){
+ const el=document.getElementById('points');
+ const defs=system==='lens'
+   ? (mode===0
+      ? [['infinity','∞','Far'],['beyond2F','>2F','Beyond 2F'],['2F','2F','At 2F'],['betweenF2F','F–2F','Between'],['F','F','Focus'],['insideF','O–F','Inside F']]
+      : [['infinity','∞','Far'],['insideF','O–F','Any position']])
+   : (mode===0
+      ? [['infinity','∞','Far'],['beyondC','>C','Beyond C'],['C','C','At C'],['betweenCF','C–F','Between'],['F','F','Focus'],['insideF','F–P','Between F–P']]
+      : [['infinity','∞','Far'],['betweenPF','P–∞','Any position']]);
+ if(!defs.some(d=>d[0]===objectPosition)) objectPosition=defs[0][0];
+ el.innerHTML=defs.map(d=>'<button class="point '+(d[0]===objectPosition?'active':'')+'" data-pos="'+d[0]+'">'+d[1]+'<small>'+d[2]+'</small></button>').join('');
+ points=[...el.querySelectorAll('.point')];
+ points.forEach(btn=>btn.onclick=()=>{
+   objectPosition=btn.dataset.pos;
+   points.forEach(b=>b.classList.toggle('active',b===btn));
+   distVal.textContent=positionName();
+   updateLesson();updateRayGraph();draw();
+ });
+ distVal.textContent=positionName();
+}
+function positionName(){
+ const names={infinity:'At infinity',beyondC:'Beyond C',C:'At C',betweenCF:'Between C–F',F:'At F',insideF:'Between F–P',beyond2F:'Beyond 2F',2F:'At 2F',betweenF2F:'Between F–2F',insideF:'Inside F',betweenPF:'Between P and infinity'};
+ return names[objectPosition]||'Object position';
+}
 function updateSystemUI(){
  const mt=document.getElementById('mirrorTypes'),lt=document.getElementById('lensTypes'),dt=document.getElementById('deviceTypeTitle');
  mt.style.display=system==='mirror'?'grid':'none'; lt.style.display=system==='lens'?'grid':'none'; dt.textContent=system==='mirror'?'Mirror type':'Lens type';
