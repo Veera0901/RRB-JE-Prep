@@ -13,8 +13,13 @@ header{height:62px;padding:9px 12px;display:flex;align-items:center;justify-cont
 h1{font-size:17px;margin:0;font-weight:800}.sub{font-size:10px;color:#9eabc0;margin-top:2px}
 .badge{padding:6px 9px;border-radius:999px;background:#263149;font-size:11px;font-weight:800}
 #viewport{position:relative;flex:1;min-height:0;overflow:hidden;background:#101722}
-#video{position:absolute;width:100%;height:100%;object-fit:cover;inset:0;transform:scaleX(1);filter:saturate(1.03)}
-#mirrorCanvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#video{position:absolute;width:100%;height:100%;object-fit:cover;inset:0;filter:saturate(1.03)}
+#mirror{position:absolute;left:14%;top:18%;width:72%;height:58%;overflow:hidden;border-radius:28px;border:2px solid rgba(240,248,255,.9);box-shadow:0 12px 45px rgba(0,0,0,.42),inset 0 0 30px rgba(255,255,255,.12);touch-action:none;will-change:transform}
+#reflection{position:absolute;width:100%;height:100%;object-fit:cover;inset:0;transform:scaleX(-1) scale(1.32);transform-origin:50% 50%;will-change:transform;filter:saturate(1.04)}
+#mirror .shine{position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.18),transparent 22%,transparent 76%,rgba(255,255,255,.07));pointer-events:none}
+#mirror .curvature{position:absolute;inset:0;border-radius:48% 52% 45% 55% / 8% 8% 92% 92%;box-shadow:inset 0 0 28px rgba(80,190,255,.22);pointer-events:none}
+#mirrorText{position:absolute;left:12px;top:10px;font-size:11px;font-weight:900;text-shadow:0 1px 4px #000;pointer-events:none}
+#mirrorCanvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;pointer-events:none}
 #hint{position:absolute;left:50%;top:14px;transform:translateX(-50%);padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.58);backdrop-filter:blur(8px);font-size:11px;white-space:nowrap;color:#e9eef8;z-index:3;pointer-events:none}
 #start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;border:0;border-radius:16px;padding:14px 20px;background:#18a97e;color:#fff;font-weight:850;font-size:15px;box-shadow:0 8px 30px #0008}
 #start.hide{display:none}
@@ -33,6 +38,7 @@ input{width:100%;accent-color:#7567ff}
 <header><div><h1>🔬 Virtual Mirror Lab</h1><div class="sub">Your camera becomes the mirror</div></div><span id="badge" class="badge">Concave</span></header>
 <div id="viewport">
 <video id="video" autoplay playsinline muted></video>
+<div id="mirror"><video id="reflection" autoplay playsinline muted></video><div class="shine"></div><div class="curvature"></div><span id="mirrorText">CONCAVE • MAGNIFYING</span></div>
 <canvas id="mirrorCanvas"></canvas>
 <div id="hint">Move your phone — the virtual mirror stays on screen</div>
 <button id="start">📷 Start Camera</button>
@@ -49,61 +55,32 @@ input{width:100%;accent-color:#7567ff}
 </div>
 </div>
 <script>
-const video=document.getElementById('video'),canvas=document.getElementById('mirrorCanvas'),ctx=canvas.getContext('2d');
+const video=document.getElementById('video'),reflection=document.getElementById('reflection'),canvas=document.getElementById('mirrorCanvas'),ctx=canvas.getContext('2d');
+const mirrorEl=document.getElementById('mirror'),mirrorText=document.getElementById('mirrorText');
 const start=document.getElementById('start'),strength=document.getElementById('strength'),strengthText=document.getElementById('strengthText');
 const badge=document.getElementById('badge'),hint=document.getElementById('hint');
-let stream=null,facing='user',mode='concave',mirror={x:.5,y:.47,w:.72,h:.58},drag=null,lastTime=0;
+let stream=null,facing='user',mode='concave',mirror={x:.5,y:.47,w:.72,h:.58},drag=null;
 
 function resize(){const d=Math.min(devicePixelRatio||1,2),r=canvas.getBoundingClientRect();canvas.width=Math.round(r.width*d);canvas.height=Math.round(r.height*d);ctx.setTransform(d,0,0,d,0,0)}
 function roundedClip(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r);c.clip()}
-function drawMirror(){
+function applyMirror(){
  const W=canvas.clientWidth,H=canvas.clientHeight;
- if(!W||!H||video.readyState<2)return;
- ctx.clearRect(0,0,W,H);
  const x=W*mirror.x-W*mirror.w/2,y=H*mirror.y-H*mirror.h/2,w=W*mirror.w,h=H*mirror.h;
- const radius=Math.min(30,w*.09);
- ctx.save();roundedClip(ctx,x,y,w,h,radius);
- // Reflect the live camera image horizontally. Then apply radial spherical mapping
- // by drawing many horizontal slices. This is deliberately processed on-device.
- const strengthVal=Number(strength.value)/100;
- const rows=Math.max(80,Math.floor(h/3));
- const videoW=video.videoWidth,videoH=video.videoHeight;
- const panelAspect=w/h,videoAspect=videoW/videoH;
- let srcW=videoW,srcH=videoH;
- if(videoAspect>panelAspect){srcW=videoH*panelAspect}else{srcH=videoW/panelAspect}
- const sx=(videoW-srcW)/2,sy=(videoH-srcH)/2;
- for(let i=0;i<rows;i++){
-   const v=(i+.5)/rows, yy=y+v*h;
-   const ny=v-.5;
-   const radial=1+ny*ny*2;
-   const base=mode==='concave'?(1-strengthVal*.55):(1+strengthVal*.42);
-   const scale=base+(radial-1)*(mode==='concave'?strengthVal*.34:-strengthVal*.18);
-   const sampleH=srcH/rows*scale;
-   const sy2=sy+v*srcH-sampleH/2;
-   const dy=yy-h/rows/2;
-   const dw=w/scale;
-   const dx=x+(w-dw)/2;
-   ctx.save();
-   ctx.translate(x+w,0);ctx.scale(-1,1);
-   ctx.drawImage(video,sx+(srcW-dw*videoW/srcW)/2,sy2,dw*videoW/srcW,sampleH, W-(dx+dw),dy,dw,h/rows+1);
-   ctx.restore();
- }
- // glass highlights
- const g=ctx.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'rgba(255,255,255,.18)');g.addColorStop(.18,'rgba(255,255,255,.02)');g.addColorStop(.8,'rgba(0,0,0,.10)');g.addColorStop(1,'rgba(255,255,255,.08)');
- ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
- ctx.restore();
- ctx.save();ctx.strokeStyle='rgba(225,235,255,.85)';ctx.lineWidth=2;roundedClip(ctx,x,y,w,h,radius);ctx.stroke();ctx.restore();
- // mirror curvature cue
- ctx.save();ctx.strokeStyle=mode==='concave'?'rgba(100,215,255,.8)':'rgba(115,240,170,.8)';ctx.lineWidth=3;
- ctx.beginPath(); if(mode==='concave')ctx.arc(x+w*.5,y+h*.52,w*.38,-Math.PI*.44,Math.PI*.44); else ctx.arc(x+w*.5,y+h*.52,w*.38,Math.PI*.56,Math.PI*1.44);ctx.stroke();ctx.restore();
- ctx.fillStyle='#fff';ctx.font='800 12px system-ui';ctx.fillText(mode==='concave'?'CONCAVE • MAGNIFYING':'CONVEX • WIDE-ANGLE',x+12,y+20);
+ mirrorEl.style.left=x+'px';mirrorEl.style.top=y+'px';mirrorEl.style.width=w+'px';mirrorEl.style.height=h+'px';
+ const q=Number(strength.value)/100;
+ const scale=mode==='concave' ? 1.02+q*.62 : .98-q*.32;
+ reflection.style.transform='scaleX(-1) scale('+scale.toFixed(3)+')';
+ mirrorEl.style.borderRadius=mode==='concave'?'34% 66% 66% 34% / 8% 8% 92% 92%':'8% 8% 92% 92% / 34% 66% 34% 66%';
+ mirrorEl.style.boxShadow=mode==='concave'?'0 12px 45px rgba(0,0,0,.42),inset 0 0 34px rgba(80,190,255,.24)':'0 12px 45px rgba(0,0,0,.42),inset 0 0 34px rgba(115,240,170,.20)';
+ mirrorText.textContent=mode==='concave'?'CONCAVE • MAGNIFYING':'CONVEX • WIDE-ANGLE';
 }
+function frame(){applyMirror();requestAnimationFrame(frame)}
 function frame(t){if(t-lastTime>24){drawMirror();lastTime=t}requestAnimationFrame(frame)}
 async function startCamera(){
  if(stream)stream.getTracks().forEach(t=>t.stop());
  try{
   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280},height:{ideal:720}},audio:false});
-  video.srcObject=stream;start.classList.add('hide');hint.textContent='Drag the mirror • Change strength below';
+  video.srcObject=stream;reflection.srcObject=stream;start.classList.add('hide');hint.textContent='Drag the mirror • Change strength below';
  }catch(e){start.textContent=e.name==='NotAllowedError'?'Allow camera access':'Camera unavailable';}
 }
 function setMode(m){mode=m;badge.textContent=m==='concave'?'Concave':'Convex';document.getElementById('concave').classList.toggle('active',m==='concave');document.getElementById('convex').classList.toggle('active',m==='convex');document.getElementById('info').textContent=m==='concave'?'Concave: central image becomes larger and more curved as strength increases.':'Convex: image becomes smaller and wider, like a convex mirror.'}
@@ -113,9 +90,9 @@ document.getElementById('convex').onclick=()=>setMode('convex');
 document.getElementById('flip').onclick=()=>{facing=facing==='user'?'environment':'user';startCamera()};
 start.onclick=startCamera;window.addEventListener('resize',resize);video.addEventListener('loadedmetadata',resize);
 let pointerId=null;
-canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect();drag={x:e.clientX-r.left,y:e.clientY-r.top,mx:mirror.x,my:mirror.y};pointerId=e.pointerId;canvas.setPointerCapture(pointerId)});
-canvas.addEventListener('pointermove',e=>{if(!drag)return;const r=canvas.getBoundingClientRect();mirror.x=Math.max(mirror.w/2,Math.min(1-mirror.w/2,drag.mx+(e.clientX-r.left-drag.x)/r.width));mirror.y=Math.max(mirror.h/2,Math.min(1-mirror.h/2,drag.my+(e.clientY-r.top-drag.y)/r.height))});
-canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
+mirrorEl.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect();drag={x:e.clientX-r.left,y:e.clientY-r.top,mx:mirror.x,my:mirror.y};pointerId=e.pointerId;mirrorEl.setPointerCapture(pointerId)});
+mirrorEl.addEventListener('pointermove',e=>{if(!drag)return;const r=canvas.getBoundingClientRect();mirror.x=Math.max(mirror.w/2,Math.min(1-mirror.w/2,drag.mx+(e.clientX-r.left-drag.x)/r.width));mirror.y=Math.max(mirror.h/2,Math.min(1-mirror.h/2,drag.my+(e.clientY-r.top-drag.y)/r.height))});
+mirrorEl.addEventListener('pointerup',()=>drag=null);mirrorEl.addEventListener('pointercancel',()=>drag=null);
 resize();setMode('concave');requestAnimationFrame(frame);
 </script>
 </body>
