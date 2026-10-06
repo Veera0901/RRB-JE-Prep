@@ -97,6 +97,7 @@ uniform float imageScale;
 uniform float invertY;
 uniform float videoAspect;
 uniform float convexMode;
+uniform float lensMode;
 varying vec2 uv;
 void main(){
  vec2 d=uv-center; d.x*=aspect;
@@ -106,8 +107,18 @@ void main(){
  vec2 curved=q*k*imageScale;
  vec2 sampleScreen=center+vec2(curved.x/aspect,curved.y);
  // Reflect around the mirror's own optical axis, not the screen centre.
- sampleScreen.x=center.x-(sampleScreen.x-center.x);
- if(invertY>0.5) sampleScreen.y=center.y-(sampleScreen.y-center.y);
+ if(lensMode<0.5){
+   sampleScreen.x=center.x-(sampleScreen.x-center.x);
+   if(invertY>0.5) sampleScreen.y=center.y-(sampleScreen.y-center.y);
+ } else {
+   // Lens: refract the image without mirror reflection.
+   // Convex lens bends rays toward the optical axis; concave lens bends them away.
+   float lensBend = (convexMode>0.5 ? -1.0 : 1.0) * strength * 0.34;
+   float lensK = 1.0 + lensBend*r*r;
+   vec2 lensOffset = q*(lensK-1.0)*0.55;
+   sampleScreen = center + vec2((d.x + lensOffset.x*radius)/aspect, d.y + lensOffset.y*radius);
+   if(invertY>0.5) sampleScreen.y=center.y-(sampleScreen.y-center.y);
+ }
  // Match the phone's CSS object-fit: cover mapping.
  vec2 sampleUV=sampleScreen;
  if(aspect>videoAspect){ sampleUV.y=0.5+(sampleScreen.y-0.5)*(aspect/videoAspect); }
@@ -129,7 +140,7 @@ function init(){
  tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
- loc.videoTex=gl.getUniformLocation(program,'videoTex');loc.center=gl.getUniformLocation(program,'center');loc.radius=gl.getUniformLocation(program,'radius');loc.strength=gl.getUniformLocation(program,'strength');loc.aspect=gl.getUniformLocation(program,'aspect');loc.imageScale=gl.getUniformLocation(program,'imageScale');loc.invertY=gl.getUniformLocation(program,'invertY');loc.videoAspect=gl.getUniformLocation(program,'videoAspect');loc.convexMode=gl.getUniformLocation(program,'convexMode');
+ loc.videoTex=gl.getUniformLocation(program,'videoTex');loc.center=gl.getUniformLocation(program,'center');loc.radius=gl.getUniformLocation(program,'radius');loc.strength=gl.getUniformLocation(program,'strength');loc.aspect=gl.getUniformLocation(program,'aspect');loc.imageScale=gl.getUniformLocation(program,'imageScale');loc.invertY=gl.getUniformLocation(program,'invertY');loc.videoAspect=gl.getUniformLocation(program,'videoAspect');loc.convexMode=gl.getUniformLocation(program,'convexMode');loc.lensMode=gl.getUniformLocation(program,'lensMode');
  gl.clearColor(0,0,0,0);
 }
 function updateRing(){const el=document.getElementById('mirrorRing');el.style.left=((mirror.x-mirror.r)*100)+'%';el.style.top=((mirror.y-mirror.r)*100)+'%';el.style.width=(mirror.r*2*100)+'%';} function resize(){const d=Math.min(devicePixelRatio||1,1.5),r=canvas.getBoundingClientRect();canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));draw()}
@@ -173,7 +184,8 @@ function draw(){
  gl.uniform1f(loc.imageScale,scale);
  gl.uniform1f(loc.invertY,inverted);
  gl.uniform1f(loc.videoAspect,video.videoWidth/video.videoHeight);
-gl.uniform1f(loc.convexMode,system==='mirror' ? (mode===1?1.0:0.0) : (mode===0?0.0:1.0));
+gl.uniform1f(loc.convexMode,system==='mirror' ? (mode===1?1.0:0.0) : (mode===0?1.0:0.0));
+ gl.uniform1f(loc.lensMode,system==='lens'?1.0:0.0);
  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 }
 function videoFrame(){draw();if(video.requestVideoFrameCallback)video.requestVideoFrameCallback(videoFrame);else raf=requestAnimationFrame(videoFrame)}
