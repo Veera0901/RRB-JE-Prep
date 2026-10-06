@@ -27,6 +27,9 @@ button{border:0;color:#fff;background:transparent;border-radius:10px;padding:10p
 .segment button.active{background:#fff;color:#111}
 .tools{display:flex;gap:7px;margin-top:8px}
 .tool{flex:1;background:rgba(255,255,255,.08);border:1px solid var(--line)}
+.points{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:5px;padding:4px;border-radius:13px;background:rgba(255,255,255,.07)}
+.point{background:transparent;border-radius:10px;padding:9px 6px}
+.point.active{background:#fff;color:#111}
 .tool:active{transform:scale(.98)}
 label{display:flex;justify-content:space-between;margin-top:10px;color:var(--muted);font-size:10px;font-weight:700}
 input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
@@ -47,8 +50,13 @@ input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
 <section class="controls">
  <div class="segment"><button id="concave" class="active">Concave</button><button id="convex">Convex</button></div>
  <div class="tools"><button class="tool" id="flip">↔ Camera</button><button class="tool" id="reset">Reset mirror</button></div>
- <label><span>Object distance</span><span id="distVal">2.0 m</span></label>
- <input id="dist" type="range" min="0.5" max="5" step="0.1" value="2">
+ <label><span>Object position</span><span id="distVal">C</span></label>
+ <div class="points" id="points">
+  <button class="point" data-pos="infinity">∞</button>
+  <button class="point active" data-pos="C">C</button>
+  <button class="point" data-pos="F">F</button>
+  <button class="point" data-pos="P">P</button>
+ </div>
  <label><span>Mirror curvature</span><span id="curvVal">55%</span></label>
  <input id="curv" type="range" min="15" max="90" value="55">
  <div id="lesson">At C (2F): real, inverted, same-size image.</div>
@@ -57,9 +65,10 @@ input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
 <script>
 const video=document.getElementById('camera'),canvas=document.getElementById('mirrorGL');
 const start=document.getElementById('start'),dot=document.getElementById('dot'),statusEl=document.getElementById('status');
-const curv=document.getElementById('curv'),curvVal=document.getElementById('curvVal'),dist=document.getElementById('dist'),distVal=document.getElementById('distVal'),lesson=document.getElementById('lesson');
+const curv=document.getElementById('curv'),curvVal=document.getElementById('curvVal'),distVal=document.getElementById('distVal'),lesson=document.getElementById('lesson');
+const points=document.querySelectorAll('.point');
 const gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});
-let stream=null,facing='user',mode=0,mirror={x:.5,y:.47,r:.28},drag=null,tex,program,raf=0,objectDistance=2,videoTextureReady=false,loc={};
+let stream=null,facing='user',mode=0,mirror={x:.5,y:.47,r:.28},drag=null,tex,program,raf=0,objectDistance=2,objectPosition='C',videoTextureReady=false,loc={};
 
 const VS=`
 attribute vec2 p; varying vec2 uv;
@@ -121,10 +130,17 @@ function draw(){
  let scale=1.0,inverted=0.0;
  const f=1.0,u=objectDistance;
  if(mode===0){
-   if(Math.abs(u-f)<0.06){scale=2.8;inverted=1.0;}
-   else if(u>f){const v=(f*u)/(u-f);scale=Math.min(2.2,Math.max(.18,Math.abs(v/u)));inverted=1.0;}
-   else {const m=f/(f-u);scale=Math.min(2.6,Math.max(1.0,m));inverted=0.0;}
- }else{scale=Math.max(.12,Math.min(1.0,f/(u+f)));inverted=0.0;}
+   if(objectPosition==='infinity'){scale=.28;inverted=1.0;}
+   else if(objectPosition==='C'){scale=1.0;inverted=1.0;}
+   else if(objectPosition==='F'){scale=2.8;inverted=1.0;}
+   else {scale=2.2;inverted=0.0;}
+ }else{
+   if(objectPosition==='infinity')scale=.28;
+   else if(objectPosition==='C')scale=.62;
+   else if(objectPosition==='F')scale=.72;
+   else scale=.82;
+   inverted=0.0;
+ }
  scale*=1.0+q*.18;
  gl.uniform1i(loc.videoTex,0);
  gl.uniform2f(loc.center,mirror.x,1-mirror.y);
@@ -144,13 +160,25 @@ async function startCamera(){
   video.srcObject=stream;await video.play();start.classList.add('hide');dot.classList.add('live');statusEl.textContent='Camera live';videoFrame();
  }catch(e){statusEl.textContent='Camera blocked';start.textContent=e.name==='NotAllowedError'?'Allow camera access':'Camera unavailable'}
 }
-function updateLesson(){const u=objectDistance;if(mode===1)lesson.textContent='Convex: virtual, upright and reduced for every object distance.';else if(Math.abs(u-1)<.06)lesson.textContent='At F: reflected rays are nearly parallel — image moves toward infinity.';else if(u>2.06)lesson.textContent='Beyond C: real, inverted and diminished image.';else if(u>1.94)lesson.textContent='At C (2F): real, inverted and same-size image.';else if(u>1.06)lesson.textContent='Between F and C: real, inverted and magnified image.';else lesson.textContent='Inside F: virtual, upright and magnified image.';}
+function updateLesson(){
+ if(mode===1)lesson.textContent='Convex: virtual, upright and reduced image for all positions.';
+ else if(objectPosition==='infinity')lesson.textContent='At ∞: real, inverted and highly diminished image forms near F.';
+ else if(objectPosition==='C')lesson.textContent='At C (2F): real, inverted and same-size image forms at C.';
+ else if(objectPosition==='F')lesson.textContent='At F: reflected rays are nearly parallel — image moves toward infinity.';
+ else lesson.textContent='At P: virtual, upright and magnified image forms behind the mirror.';
+}
 function setMode(m){mode=m;document.getElementById('concave').classList.toggle('active',!m);document.getElementById('convex').classList.toggle('active',!!m);updateLesson();draw()}
 start.onclick=startCamera;
 document.getElementById('concave').onclick=()=>setMode(0);document.getElementById('convex').onclick=()=>setMode(1);
 document.getElementById('flip').onclick=()=>{facing=facing==='user'?'environment':'user';startCamera()};
 document.getElementById('reset').onclick=()=>{mirror={x:.5,y:.47,r:.28};updateRing();draw()};
-curv.oninput=()=>{curvVal.textContent=curv.value+'%';draw()};dist.oninput=()=>{objectDistance=+dist.value;distVal.textContent=objectDistance.toFixed(1)+' m';updateLesson();draw()};
+curv.oninput=()=>{curvVal.textContent=curv.value+'%';draw()};
+points.forEach(btn=>btn.onclick=()=>{
+ objectPosition=btn.dataset.pos;
+ points.forEach(b=>b.classList.toggle('active',b===btn));
+ distVal.textContent=objectPosition==='infinity'?'∞':objectPosition;
+ updateLesson();draw();
+});
 window.addEventListener('resize',resize);
 canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;const dx=(x-mirror.x)*r.width/r.height,dy=y-mirror.y;if(Math.hypot(dx,dy)<mirror.r){drag={x,y,mx:mirror.x,my:mirror.y};canvas.setPointerCapture(e.pointerId)}});
 canvas.addEventListener('pointermove',e=>{if(!drag)return;const r=canvas.getBoundingClientRect();mirror.x=Math.max(mirror.r*r.height/r.width,Math.min(1-mirror.r*r.height/r.width,drag.mx+(e.clientX-r.left)/r.width-drag.x));mirror.y=Math.max(mirror.r,Math.min(1-mirror.r,drag.my+(e.clientY-r.top)/r.height-drag.y));updateRing();draw()});
