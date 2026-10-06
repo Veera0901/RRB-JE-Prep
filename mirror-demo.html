@@ -11,7 +11,7 @@
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 #app{height:100%;position:relative}
 #camera{position:absolute;top:84px;right:14px;width:230px;height:307px;object-fit:cover;background:#111;border:1px solid rgba(255,255,255,.32);border-radius:18px;z-index:5;box-shadow:0 10px 30px #0009;transform:scaleX(-1)}
-.camera-label{position:absolute;top:91px;right:28px;z-index:6;padding:4px 7px;border-radius:7px;background:rgba(0,0,0,.48);font-size:8px;font-weight:800;color:#fff;pointer-events:none;backdrop-filter:blur(8px)}
+.rayGraph{position:absolute;top:84px;left:12px;width:142px;height:112px;z-index:5;border:1px solid rgba(255,255,255,.2);border-radius:15px;background:rgba(8,11,17,.76);backdrop-filter:blur(12px);box-shadow:0 10px 30px #0007;padding:7px}.rayGraphTitle{font-size:8px;font-weight:850;color:#fff;margin-bottom:3px}.rayGraph svg{width:100%;height:82px;display:block}.rayLabel{font-size:7px;fill:#aab2c0}.rayMain{stroke:#eef2f7;stroke-width:1.2}.rayAux{stroke:#7c6cff;stroke-width:1;stroke-dasharray:3 2}.rayObj{stroke:#fff;stroke-width:2}.rayImg{stroke:#39d98a;stroke-width:2}.camera-label{position:absolute;top:91px;right:28px;z-index:6;padding:4px 7px;border-radius:7px;background:rgba(0,0,0,.48);font-size:8px;font-weight:800;color:#fff;pointer-events:none;backdrop-filter:blur(8px)}
 #mirrorGL{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 #mirrorRing{position:absolute;left:22%;top:19%;width:56%;aspect-ratio:1;border:2px solid rgba(255,255,255,.82);border-radius:50%;box-shadow:0 0 0 5px rgba(255,255,255,.06),inset 0 0 35px rgba(124,108,255,.16);pointer-events:none;z-index:2}#shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent 18%,transparent 68%,rgba(0,0,0,.58))}
 header{position:absolute;top:0;left:0;right:0;height:74px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:5}
@@ -52,7 +52,8 @@ input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
  <div><div class="title">Mirror Lab</div><div class="subtitle">Realtime curved-mirror experiment</div></div>
  <div class="status"><span id="dot" class="dot"></span><span id="status">Camera off</span></div>
 </header>
-<div id="mirrorRing" aria-hidden="true"></div><div class="camera-label">Original</div><div id="tip">Place your face/object inside the circle • move closer and farther</div>
+<div id="mirrorRing" aria-hidden="true"></div>
+<div class="rayGraph" id="rayGraph"><div class="rayGraphTitle">Optical ray diagram</div><svg viewBox="0 0 128 78" aria-label="Optical ray diagram"><line x1="8" y1="43" x2="120" y2="43" class="rayMain"/><line x1="72" y1="10" x2="72" y2="70" class="rayMain"/><circle cx="48" cy="43" r="2.2" fill="#7c6cff"/><circle cx="96" cy="43" r="2.2" fill="#7c6cff"/><text x="44" y="54" class="rayLabel">F</text><text x="92" y="54" class="rayLabel">2F</text><line id="rayObject" x1="38" y1="43" x2="38" y2="20" class="rayObj"/><line id="rayImage" x1="104" y1="43" x2="104" y2="28" class="rayImg"/><line x1="38" y1="20" x2="72" y2="20" class="rayAux"/><line x1="72" y1="20" x2="104" y2="28" class="rayAux"/><text id="rayType" x="8" y="11" class="rayLabel">Concave</text></svg></div><div class="camera-label">Original</div><div id="tip">Place your face/object inside the circle • move closer and farther</div>
 <button id="start">📷 Start camera</button>
 <section class="controls">
  <div class="sectionTitle">Optical device</div><div class="segment" id="systemMode"><button id="mirrorMode" class="active">Mirror</button><button id="lensMode">Lens</button></div>
@@ -201,6 +202,14 @@ async function startCamera(){
   video.srcObject=stream;await video.play();start.classList.add('hide');dot.classList.add('live');statusEl.textContent='Camera live';videoFrame();
  }catch(e){statusEl.textContent='Camera blocked';start.textContent=e.name==='NotAllowedError'?'Allow camera access':'Camera unavailable'}
 }
+function updateRayGraph(){
+ const obj=document.getElementById('rayObject'),img=document.getElementById('rayImage'),type=document.getElementById('rayType');
+ const positions={infinity:{x:18,h:9,ix:82,ih:7},C:{x:38,h:23,ix:104,ih:23},F:{x:55,h:31,ix:112,ih:42},P:{x:64,h:24,ix:48,ih:36}};
+ const p=positions[objectPosition]||positions.C;
+ obj.setAttribute('x1',p.x);obj.setAttribute('x2',p.x);obj.setAttribute('y1',43);obj.setAttribute('y2',43-p.h);
+ img.setAttribute('x1',p.ix);img.setAttribute('x2',p.ix);img.setAttribute('y1',43);img.setAttribute('y2',mode===1?43-p.ih:43-p.ih);
+ type.textContent=system==='lens'?(mode===0?'Convex lens':'Concave lens'):(mode===0?'Concave mirror':'Convex mirror');
+}
 function updateLesson(){
  if(system==='lens'){
    if(mode===0){
@@ -224,14 +233,14 @@ function updateSystemUI(){
  distVal.textContent=system==='mirror'
    ? (objectPosition==='infinity'?'∞ · Far':objectPosition==='C'?'C · 2F':objectPosition==='F'?'F · Focus':'P · Pole')
    : (objectPosition==='infinity'?'∞ · Far':objectPosition==='C'?'2F':objectPosition==='F'?'F · Focus':'O · Optical');
- updateLesson(); draw();
+ updateLesson(); updateRayGraph(); draw();
 }
 function setMode(m){
  mode=m;
  const isLens=system==='lens';
  (isLens?lensConvex:concave).classList.toggle('active',m===0);
  (isLens?lensConcave:convex).classList.toggle('active',m===1);
- updateLesson();draw();
+ updateLesson();updateRayGraph();draw();
 }
 start.onclick=startCamera;
 mirrorMode.onclick=()=>{system='mirror';setMode(0);updateSystemUI()};
@@ -248,6 +257,7 @@ document.getElementById('reset').onclick=()=>{mirror={x:.5,y:.47,r:.28};updateRi
 curv.oninput=()=>{curvVal.textContent=curv.value+'%';draw()};
 points.forEach(btn=>btn.onclick=()=>{
  objectPosition=btn.dataset.pos;
+ updateRayGraph();
  points.forEach(b=>b.classList.toggle('active',b===btn));
  distVal.textContent=objectPosition==='infinity'?'∞ · Far':objectPosition==='C'?'C · 2F':objectPosition==='F'?'F · Focus':'P · Pole';
  updateLesson();draw();
