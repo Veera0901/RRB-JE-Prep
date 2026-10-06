@@ -185,15 +185,36 @@ async function startCamera(){
  }catch(e){statusEl.textContent='Camera blocked';start.textContent=e.name==='NotAllowedError'?'Allow camera access':'Camera unavailable'}
 }
 function updateLesson(){
- if(mode===1)lesson.textContent='Convex: virtual, upright and reduced image for all positions.';
- else if(objectPosition==='infinity')lesson.textContent='At ∞: real, inverted and highly diminished image forms near F.';
- else if(objectPosition==='C')lesson.textContent='At C (2F): real, inverted and same-size image forms at C.';
- else if(objectPosition==='F')lesson.textContent='At F: reflected rays are nearly parallel — image moves toward infinity.';
- else lesson.textContent='At P: virtual, upright and magnified image forms behind the mirror.';
+ if(system==='lens'){
+   if(mode===0){
+     if(objectPosition==='infinity') lesson.textContent='Convex lens at ∞: real, inverted and highly diminished image forms near F.';
+     else if(objectPosition==='C') lesson.textContent='Convex lens at 2F: real, inverted and same-size image forms at 2F.';
+     else if(objectPosition==='F') lesson.textContent='Convex lens at F: refracted rays become parallel — image tends to infinity.';
+     else lesson.textContent='Convex lens inside F: virtual, upright and magnified image forms on the object side.';
+   }else lesson.textContent='Concave lens: virtual, upright and diminished image for all object positions.';
+ }else{
+   if(mode===1)lesson.textContent='Convex mirror: virtual, upright and reduced image for all positions.';
+   else if(objectPosition==='infinity')lesson.textContent='At ∞: real, inverted and highly diminished image forms near F.';
+   else if(objectPosition==='C')lesson.textContent='At C (2F): real, inverted and same-size image forms at C.';
+   else if(objectPosition==='F')lesson.textContent='At F: reflected rays are nearly parallel — image moves toward infinity.';
+   else lesson.textContent='At P: virtual, upright and magnified image forms behind the mirror.';
+ }
 }
-function setMode(m){mode=m;document.getElementById('concave').classList.toggle('active',!m);document.getElementById('convex').classList.toggle('active',!!m);updateLesson();draw()}
+function updateSystemUI(){
+ const mt=document.getElementById('mirrorTypes'),lt=document.getElementById('lensTypes');
+ mt.style.display=system==='mirror'?'grid':'none'; lt.style.display=system==='lens'?'grid':'none';
+ mirrorMode.classList.toggle('active',system==='mirror'); lensMode.classList.toggle('active',system==='lens');
+ distVal.textContent=system==='mirror'
+   ? (objectPosition==='infinity'?'∞ · Far':objectPosition==='C'?'C · 2F':objectPosition==='F'?'F · Focus':'P · Pole')
+   : (objectPosition==='infinity'?'∞ · Far':objectPosition==='C'?'2F':objectPosition==='F'?'F · Focus':'O · Optical');
+ updateLesson(); draw();
+}
+function setMode(m){mode=m;updateLesson();draw()}
 start.onclick=startCamera;
-document.getElementById('concave').onclick=()=>setMode(0);document.getElementById('convex').onclick=()=>setMode(1);
+mirrorMode.onclick=()=>{system='mirror';setMode(0);updateSystemUI()};
+lensMode.onclick=()=>{system='lens';setMode(0);updateSystemUI()};
+concave.onclick=()=>setMode(0); convex.onclick=()=>setMode(1);
+lensConvex.onclick=()=>setMode(0); lensConcave.onclick=()=>setMode(1);
 document.getElementById('flip').onclick=()=>{facing=facing==='user'?'environment':'user';startCamera()};
 document.getElementById('reset').onclick=()=>{mirror={x:.5,y:.47,r:.28};updateRing();draw()};
 curv.oninput=()=>{curvVal.textContent=curv.value+'%';draw()};
