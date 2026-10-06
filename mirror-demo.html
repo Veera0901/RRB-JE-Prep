@@ -281,16 +281,38 @@ async function startCamera(){
  }catch(e){statusEl.textContent='Camera blocked';start.textContent=e.name==='NotAllowedError'?'Allow camera access':'Camera unavailable'}
 }
 function updateRayGraph(){
- const obj=document.getElementById('rayObject'),img=document.getElementById('rayImage'),type=document.getElementById('rayType'),surface=document.getElementById('opticalSurface'),ia=document.getElementById('imageArrow');
- const positions={infinity:{x:18,h:9,ix:82,ih:7},C:{x:38,h:23,ix:104,ih:23},F:{x:55,h:31,ix:112,ih:42},P:{x:64,h:24,ix:48,ih:36}};
- const p=positions[objectPosition]||positions.C;
- obj.setAttribute('x1',p.x);obj.setAttribute('x2',p.x);obj.setAttribute('y1',43);obj.setAttribute('y2',43-p.h);
- img.setAttribute('x1',p.ix);img.setAttribute('x2',p.ix);img.setAttribute('y1',43);img.setAttribute('y2',mode===1?43-p.ih:43-p.ih);
+ const obj=document.getElementById('rayObject'),img=document.getElementById('rayImage'),
+       type=document.getElementById('rayType'),surface=document.getElementById('opticalSurface'),
+       ia=document.getElementById('imageArrow'),oa=document.getElementById('objectArrow');
  type.textContent=system==='lens'?(mode===0?'Convex lens':'Concave lens'):(mode===0?'Concave mirror':'Convex mirror');
- if(system==='lens'){surface.setAttribute('d','M118 18 Q132 62 118 106');}
- else if(mode===0){surface.setAttribute('d','M118 18 Q92 62 118 106');}
- else {surface.setAttribute('d','M118 18 Q144 62 118 106');}
- ia.setAttribute('points',mode===0?'94,34 90,42 98,42':'94,66 90,58 98,58');
+ if(system==='lens') surface.setAttribute('d',mode===0?'M118 18 Q132 62 118 106':'M118 18 Q104 62 118 106');
+ else surface.setAttribute('d',mode===0?'M118 18 Q92 62 118 106':'M118 18 Q144 62 118 106');
+
+ let ox=42,oh=28,ix=94,ih=20,virtual=false,hideImage=false;
+ if(system==='mirror' && mode===0){
+   const m={
+    infinity:[18,8,70,7,false],beyondC:[31,18,104,12,false],C:[42,23,42,23,false],
+    betweenCF:[52,34,136,34,false],F:[58,30,156,8,false],insideF:[68,25,145,28,true]
+   }[objectPosition]||[42,23,42,23,false];
+   [ox,oh,ix,ih,virtual]=m;
+ }else if(system==='mirror'){
+   const m=objectPosition==='infinity'?[20,8,135,7,true]:[45,25,137,14,true];
+   [ox,oh,ix,ih,virtual]=m;
+ }else if(system==='lens' && mode===0){
+   const m={
+    infinity:[18,8,70,7,false],beyond2F:[30,18,103,12,false],2F:[42,23,42,23,false],
+    betweenF2F:[55,32,136,32,false],F:[60,28,160,7,false],insideF:[72,25,48,31,true]
+   }[objectPosition]||[42,23,42,23,false];
+   [ox,oh,ix,ih,virtual]=m;
+ }else{
+   [ox,oh,ix,ih,virtual]=[42,22,90,13,true];
+ }
+ obj.setAttribute('x1',ox);obj.setAttribute('x2',ox);
+ obj.setAttribute('y1',62);obj.setAttribute('y2',62-oh);
+ oa.setAttribute('points',ox+','+(58-oh)+' '+(ox-4)+','+(66-oh)+' '+(ox+4)+','+(66-oh));
+ img.setAttribute('x1',ix);img.setAttribute('x2',ix);
+ img.setAttribute('y1',62);img.setAttribute('y2',virtual?62-ih:62-ih);
+ ia.setAttribute('points',virtual?(ix+','+(58-ih)+' '+(ix-4)+','+(66-ih)+' '+(ix+4)+','+(66-ih)):(ix+','+(58-ih)+' '+(ix-4)+','+(66-ih)+' '+(ix+4)+','+(66-ih)));
 }
 function updateLesson(){
  if(system==='lens'){
