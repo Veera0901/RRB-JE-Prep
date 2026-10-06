@@ -1,104 +1,80 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Mirror Lab — Live Camera</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mirror Lab — AR Physics</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#eef2ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.app{max-width:900px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}
-h1{font-size:22px;margin:0}.sub{font-size:13px;color:#aab4d0;margin-top:3px}
-.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-button{border:0;border-radius:12px;padding:11px 14px;font-weight:700;background:#26314f;color:#fff}
-button.active{background:#6d5dfc}button.start{background:#16a37a}
-.stage{position:relative;aspect-ratio:16/10;background:#05070d;border-radius:18px;overflow:hidden;border:1px solid #303957}
-video{width:100%;height:100%;object-fit:cover;display:block}
-.overlay{position:absolute;inset:0;pointer-events:none}
-.label{position:absolute;background:rgba(5,8,18,.78);padding:7px 10px;border-radius:10px;font-size:12px}
-#mirrorLabel{right:12px;top:12px}.focus{position:absolute;width:14px;height:14px;border-radius:50%;background:#ffd166;border:2px solid #fff;transform:translate(-50%,-50%)}
-.ray{position:absolute;height:3px;background:#ff9f43;transform-origin:left center;border-radius:3px;box-shadow:0 0 7px #ff9f43}
-#explain{margin-top:14px;padding:15px;border-radius:16px;background:#151d34;border:1px solid #303957}
-#explain h2{font-size:18px;margin:0 0 6px}.facts{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:12px}
-.fact{background:#0e1529;border-radius:12px;padding:11px;font-size:13px}.fact b{display:block;margin-bottom:3px;color:#dbe2ff}
-.tip{font-size:13px;color:#b8c2dc;line-height:1.45;margin:10px 0 0}
-.status{font-size:12px;color:#9eabc9;margin-top:9px}
-@media(max-width:600px){.app{padding:12px}.facts{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+*{box-sizing:border-box}body{margin:0;background:#07101d;color:#f4f7ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.app{max-width:900px;margin:auto;padding:14px}.top{display:flex;justify-content:space-between;gap:10px;align-items:center}h1{font-size:21px;margin:0}.sub{font-size:12px;color:#aebbd0;margin-top:3px}
+.controls{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}button{border:0;border-radius:11px;padding:10px 13px;font-weight:750;background:#24324a;color:#fff}button.active{background:#6558e8}button.start{background:#159b75}
+.stage{position:relative;aspect-ratio:16/10;background:#101a29;border:1px solid #35445e;border-radius:18px;overflow:hidden}video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.68}canvas{position:absolute;inset:0;width:100%;height:100%}
+.panel{margin-top:11px;padding:13px;border-radius:15px;background:#121e31;border:1px solid #30415b}.row{display:flex;justify-content:space-between;gap:12px;align-items:center}.badge{padding:5px 9px;border-radius:9px;background:#263753;font-size:12px;font-weight:700}
+input[type=range]{width:100%;margin:9px 0}.small{font-size:12px;color:#afbdd1;line-height:1.4}.status{font-size:12px;color:#9fb0c8;margin-top:8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.fact{background:#0b1524;border-radius:10px;padding:9px;font-size:12px}.fact b{display:block;color:#dce6f8;margin-bottom:3px}
+@media(max-width:600px){.app{padding:10px}.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="top"><div><h1>🔬 Mirror Lab — Live Camera</h1><div class="sub">Point your phone at a real mirror and experiment.</div></div></div>
-  <div class="controls">
-    <button id="start" class="start">📷 Start Camera</button>
-    <button id="concave" class="active">Concave</button>
-    <button id="convex">Convex</button>
-    <button id="flip">↔ Flip Camera</button>
-  </div>
-  <div class="stage">
-    <video id="video" autoplay playsinline muted></video>
-    <div class="overlay">
-      <div id="mirrorLabel" class="label">Concave • rays converge</div>
-      <div id="focus" class="focus"></div>
-      <div id="r1" class="ray"></div><div id="r2" class="ray"></div><div id="r3" class="ray"></div>
-    </div>
-  </div>
-  <div id="status" class="status">Camera is off. Tap Start Camera and allow permission.</div>
-  <div id="explain">
-    <h2 id="title">Concave mirror — converging</h2>
-    <div id="desc">Use a real concave mirror. Move the camera/object toward and away from it and watch the reflected image change.</div>
-    <div class="facts">
-      <div class="fact"><b>What to look for</b><span id="look">Rays reflected by the mirror tend to meet at the focus.</span></div>
-      <div class="fact"><b>Image</b><span id="image">Can be real & inverted or virtual & magnified, depending on distance.</span></div>
-    </div>
-    <p class="tip">Tip: Put a small object in front of the mirror. Slowly change its distance while keeping the camera view on the mirror.</p>
-  </div>
+<div class="top"><div><h1>🔬 Mirror Lab — AR Physics</h1><div class="sub">Live camera + interactive ray simulation</div></div><span id="modeBadge" class="badge">Concave</span></div>
+<div class="controls"><button id="start" class="start">📷 Start Camera</button><button id="concave" class="active">Concave</button><button id="convex">Convex</button><button id="flip">↔ Camera</button></div>
+<div class="stage"><video id="video" autoplay playsinline muted></video><canvas id="scene"></canvas></div>
+<div id="status" class="status">Camera is off. Start camera, then move the object-distance slider.</div>
+<div class="panel">
+<div class="row"><b>Object distance</b><span id="distance">2.00 F</span></div>
+<input id="distanceRange" type="range" min="0.65" max="4" value="2" step="0.05">
+<div class="small">Red = object. Blue/green = calculated image. Orange = reflected rays. Dashed green = virtual-ray extension.</div>
+<div class="grid"><div class="fact"><b id="behaviorTitle">Concave mirror</b><span id="behavior">At 2F, the image is real, inverted and the same size.</span></div><div class="fact"><b>Mirror equation</b><span>1/f = 1/do + 1/di</span></div></div>
+</div>
 </div>
 <script>
-const v=document.getElementById('video'), status=document.getElementById('status');
-const mirrorLabel=document.getElementById('mirrorLabel'), title=document.getElementById('title'), desc=document.getElementById('desc');
-const look=document.getElementById('look'), image=document.getElementById('image');
-const focus=document.getElementById('focus'), rays=[1,2,3].map(i=>document.getElementById('r'+i));
-let stream=null, facing='environment', mode='concave';
-function drawRays(){
-  const w=v.clientWidth,h=v.clientHeight; if(!w||!h)return;
-  focus.style.left=(mode==='concave'? '42%':'64%'); focus.style.top='50%';
-  const starts=[[8,32],[8,50],[8,68]];
-  const endX=mode==='concave'?42:64;
-  rays.forEach((el,i)=>{
-    const sx=starts[i][0], sy=starts[i][1];
-    const ex=mode==='concave'?endX:(78+i*5);
-    const ey=50+(i-1)*6;
-    const dx=(ex-sx)*w/100,dy=(ey-sy)*h/100;
-    const len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx)*180/Math.PI;
-    el.style.left=sx+'%';el.style.top=sy+'%';el.style.width=len+'px';el.style.transform='rotate('+ang+'deg)';
-  });
-}
-async function startCamera(){
-  if(stream)stream.getTracks().forEach(t=>t.stop());
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:false});
-    v.srcObject=stream; status.textContent='Live camera active. Point it at a mirror.';
-  }catch(e){status.textContent='Camera could not start: '+e.name+'. Open this page in HTTPS and allow camera permission.';}
-}
-document.getElementById('start').onclick=startCamera;
-document.getElementById('flip').onclick=()=>{facing=facing==='environment'?'user':'environment';startCamera()};
-document.getElementById('concave').onclick=()=>setMode('concave');
-document.getElementById('convex').onclick=()=>setMode('convex');
-function setMode(m){
- mode=m;
- document.getElementById('concave').classList.toggle('active',m==='concave');
- document.getElementById('convex').classList.toggle('active',m==='convex');
- if(m==='concave'){
-   mirrorLabel.textContent='Concave • rays converge'; title.textContent='Concave mirror — converging';
-   desc.textContent='Use a real concave mirror. Move the camera/object toward and away from it and watch the reflected image change.';
-   look.textContent='Reflected rays tend to meet at the focus.'; image.textContent='Can be real & inverted or virtual & magnified, depending on distance.';
+const video=document.getElementById('video'),canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
+const range=document.getElementById('distanceRange'),distance=document.getElementById('distance'),status=document.getElementById('status');
+const modeBadge=document.getElementById('modeBadge'),behavior=document.getElementById('behavior'),behaviorTitle=document.getElementById('behaviorTitle');
+let stream=null,facing='environment',mode='concave',raf=0;
+function fit(){const r=canvas.getBoundingClientRect(),d=devicePixelRatio||1;canvas.width=r.width*d;canvas.height=r.height*d;ctx.setTransform(d,0,0,d,0,0)}
+function line(x1,y1,x2,y2,color,w=2,dash=[]){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=w;ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
+function arrow(x,y,h,color){ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-h);ctx.stroke();ctx.beginPath();ctx.moveTo(x,y-h);ctx.lineTo(x-7,y-h+12);ctx.lineTo(x+7,y-h+12);ctx.closePath();ctx.fill();ctx.restore()}
+function draw(){
+ const W=canvas.clientWidth,H=canvas.clientHeight;if(!W||!H)return;ctx.clearRect(0,0,W,H);
+ const mirrorX=W*.70,axisY=H*.72,fpx=W*.115;
+ line(W*.05,axisY,W*.95,axisY,'rgba(220,235,255,.42)',1,[6,5]);
+ ctx.save();ctx.lineWidth=5;ctx.strokeStyle='rgba(255,255,255,.95)';ctx.beginPath();
+ if(mode==='concave')ctx.arc(mirrorX+24,axisY,Math.min(H*.46,W*.28),-Math.PI/2,Math.PI/2);else ctx.arc(mirrorX-24,axisY,Math.min(H*.46,W*.28),Math.PI/2,3*Math.PI/2);ctx.stroke();ctx.restore();
+ ctx.font='700 12px system-ui';ctx.fillStyle='#fff';ctx.fillText(mode==='concave'?'CONCAVE MIRROR':'CONVEX MIRROR',mirrorX-72,22);
+ const F=mode==='concave'?mirrorX-fpx:mirrorX+fpx,twoF=mode==='concave'?mirrorX-2*fpx:mirrorX+2*fpx;
+ [[F,'F'],[twoF,'2F']].forEach(([x,t])=>{if(x>8&&x<W-8){ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(x,axisY,4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d9e5f5';ctx.fillText(t,x-7,axisY+19)}});
+ const doF=parseFloat(range.value),objX=mirrorX-doF*fpx,objH=H*.25,objY=axisY-objH;arrow(objX,axisY,objH,'#ff5b6e');ctx.fillStyle='#ff9aa5';ctx.fillText('Object',objX-24,objY-9);
+ let diF=mode==='concave'?doF/(doF-1):doF/(doF+1),m=mode==='concave'?-diF/doF:-diF/doF;
+ let imgX=mode==='concave'?mirrorX-diF*fpx:mirrorX+diF*fpx,imgH=Math.max(24,Math.min(H*.62,Math.abs(m)*objH));
+ if(mode==='concave'&&Math.abs(doF-1)<.12){imgX=mirrorX-fpx*4;imgH=H*.55}
+ imgX=Math.max(18,Math.min(W-18,imgX));arrow(imgX,axisY,imgH,mode==='concave'?'#55d6ff':'#72e39b');
+ ctx.fillStyle=mode==='concave'?'#8be2ff':'#9df2b4';ctx.fillText(mode==='concave'?'Image':'Virtual image',imgX-28,axisY-imgH-10);
+ const topY=objY;
+ if(mode==='concave'){
+   line(objX,topY,mirrorX,topY,'#ffb14a',2.5);
+   line(mirrorX,topY,imgX,axisY-(m<0?-imgH:imgH),'#ffb14a',2.5);
+   line(objX,topY,mirrorX,axisY-(topY-axisY)*.03,'#ffb14a',2.5);
+   line(mirrorX,axisY-(topY-axisY)*.03,imgX,axisY-(m<0?-imgH:imgH),'#ffb14a',2.5);
  }else{
-   mirrorLabel.textContent='Convex • rays diverge'; title.textContent='Convex mirror — diverging';
-   desc.textContent='Use a real convex mirror. Move the camera closer and farther away and observe the wide field of view.';
-   look.textContent='Reflected rays spread out and appear to come from a focus behind the mirror.'; image.textContent='Always virtual, upright and diminished (smaller).';
+   const endX=W*.96,endY=axisY-(topY-axisY)*.38;
+   line(objX,topY,mirrorX,topY,'#ffb14a',2.5);line(mirrorX,topY,endX,endY,'#ffb14a',2.5);
+   line(mirrorX,topY,imgX,axisY-imgH,'rgba(114,227,155,.8)',2,[5,5]);
+   line(objX,topY,mirrorX,axisY-(topY-axisY)*.03,'#ffb14a',2.5);
+   line(mirrorX,axisY-(topY-axisY)*.03,endX,axisY-(topY-axisY)*.03+(endX-mirrorX)*.15,'#ffb14a',2.5);
  }
- drawRays();
+ distance.textContent=doF.toFixed(2)+' F';updateText(doF);raf=requestAnimationFrame(draw);
 }
-v.addEventListener('loadedmetadata',drawRays); window.addEventListener('resize',drawRays); setMode('concave');
+function updateText(d){
+ if(mode==='concave'){
+  if(Math.abs(d-1)<.08)behavior.textContent='Near F: the image moves very far away and becomes highly magnified.';
+  else if(d<1)behavior.textContent='Inside F: image is virtual, upright and magnified.';
+  else if(Math.abs(d-2)<.08)behavior.textContent='At 2F: image is real, inverted and same size.';
+  else if(d>2)behavior.textContent='Beyond 2F: image is real, inverted and smaller.';
+  else behavior.textContent='Between F and 2F: image is real, inverted and magnified.';
+ }else behavior.textContent='Always virtual, upright and smaller, behind the mirror.';
+}
+function setMode(m){mode=m;document.getElementById('concave').classList.toggle('active',m==='concave');document.getElementById('convex').classList.toggle('active',m==='convex');modeBadge.textContent=m[0].toUpperCase()+m.slice(1);behaviorTitle.textContent=m==='concave'?'Concave mirror':'Convex mirror';range.value='2';}
+async function startCamera(){if(stream)stream.getTracks().forEach(t=>t.stop());try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:false});video.srcObject=stream;status.textContent='Live camera active. Physics layer is over the camera view.'}catch(e){status.textContent='Camera error: '+e.name+'. Allow camera permission and use HTTPS.'}}
+document.getElementById('start').onclick=startCamera;document.getElementById('flip').onclick=()=>{facing=facing==='environment'?'user':'environment';startCamera()};document.getElementById('concave').onclick=()=>setMode('concave');document.getElementById('convex').onclick=()=>setMode('convex');range.oninput=()=>updateText(parseFloat(range.value));video.onloadedmetadata=fit;window.onresize=fit;setMode('concave');fit();draw();
 </script>
 </body></html>
