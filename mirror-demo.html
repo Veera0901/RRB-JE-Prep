@@ -59,7 +59,7 @@ const video=document.getElementById('camera'),canvas=document.getElementById('mi
 const start=document.getElementById('start'),dot=document.getElementById('dot'),statusEl=document.getElementById('status');
 const curv=document.getElementById('curv'),curvVal=document.getElementById('curvVal'),dist=document.getElementById('dist'),distVal=document.getElementById('distVal'),lesson=document.getElementById('lesson');
 const gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});
-let stream=null,facing='user',mode=0,mirror={x:.5,y:.47,r:.28},drag=null,tex,program,raf=0,objectDistance=2;
+let stream=null,facing='user',mode=0,mirror={x:.5,y:.47,r:.28},drag=null,tex,program,raf=0,objectDistance=2,videoTextureReady=false,loc={};
 
 const VS=`
 attribute vec2 p; varying vec2 uv;
@@ -109,7 +109,7 @@ function draw(){
  if(!gl||!video.videoWidth)return;
  gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT);
  gl.useProgram(program);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);
- gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);
+ if(!videoTextureReady){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);videoTextureReady=true;}else{gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,video);}
  const q=+curv.value/100,rect=canvas.getBoundingClientRect();
  const aspect=rect.width/rect.height;
  let scale=1.0,inverted=0.0;
