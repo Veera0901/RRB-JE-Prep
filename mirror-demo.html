@@ -157,310 +157,139 @@ input[type=range]{width:100%;margin:4px 0 0;accent-color:var(--accent)}
  <div id="lesson">At C (2F): real, inverted and same-size image forms at C.</div>
 </section>
 </div><script>
-const video=document.getElementById('camera'),canvas=document.getElementById('mirrorGL');
-const start=document.getElementById('start'),dot=document.getElementById('dot'),statusEl=document.getElementById('status');
-const curv=document.getElementById('curv'),curvVal=document.getElementById('curvVal'),distVal=document.getElementById('distVal'),lesson=document.getElementById('lesson');
+const $=id=>document.getElementById(id);
+const video=$('camera'),canvas=$('mirrorGL'),start=$('start'),dot=$('dot'),statusEl=$('status');
+const systemSelect=$('systemSelect'),viewSelect=$('viewSelect'),actionSelect=$('actionSelect');
+const mirrorTypes=$('mirrorTypes'),lensTypes=$('lensTypes'),concave=$('concave'),convex=$('convex'),lensConvex=$('lensConvex'),lensConcave=$('lensConcave');
+const pointsEl=$('points'),distVal=$('distVal'),lesson=$('lesson'),curv=$('curv'),curvVal=$('curvVal');
+let state={device:'mirror',type:0,view:'person',position:'C',facing:'user',stream:null,mirror:{x:.5,y:.47,r:.28}};
 let points=[];
-const systemSelect=document.getElementById('systemSelect'),viewSelect=document.getElementById('viewSelect'),actionSelect=document.getElementById('actionSelect');
-const mirrorTypes=document.getElementById('mirrorTypes'),lensTypes=document.getElementById('lensTypes');
-const lensConvex=document.getElementById('lensConvex'),lensConcave=document.getElementById('lensConcave');
-const concave=document.getElementById('concave'),convex=document.getElementById('convex');
-
-let viewMode='person';
 const gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});
-let stream=null,facing='user',system='mirror',mode=0,mirror={x:.5,y:.47,r:.28},drag=null,tex,program,raf=0,objectDistance=2,objectPosition='C',videoTextureReady=false,loc={};
+let tex,program,videoTextureReady=false,loc={},drag=null;
 
-const VS=`
-attribute vec2 p; varying vec2 uv;
-void main(){gl_Position=vec4(p,0.,1.);uv=p*.5+.5;}
-`;
-const FS=`
-precision mediump float;
-uniform sampler2D videoTex;
-uniform vec2 center;
-uniform float radius;
-uniform float strength;
-uniform float aspect;
-uniform float imageScale;
-uniform float invertY;
-uniform float videoAspect;
-uniform float convexMode;
-uniform float lensMode;
+const VS=`attribute vec2 p;varying vec2 uv;void main(){gl_Position=vec4(p,0.,1.);uv=p*.5+.5;}`;
+const FS=`precision mediump float;
+uniform sampler2D videoTex;uniform vec2 center;uniform float radius;uniform float strength;uniform float aspect;
+uniform float imageScale;uniform float invertY;uniform float videoAspect;uniform float convexMode;uniform float lensMode;
 varying vec2 uv;
 void main(){
- vec2 d=uv-center; d.x*=aspect;
- float rr=length(d); if(rr>radius){discard;}
- vec2 q=d/radius; float r=length(q);
- float k=1.0/(1.0+(convexMode>0.5 ? -strength : strength)*0.55*r*r);
- vec2 curved=q*k*imageScale;
- vec2 sampleScreen=center+vec2(curved.x/aspect,curved.y);
- // Reflect around the mirror's own optical axis, not the screen centre.
- if(lensMode<0.5){
-   sampleScreen.x=center.x-(sampleScreen.x-center.x);
-   if(invertY>0.5) sampleScreen.y=center.y-(sampleScreen.y-center.y);
- } else {
-   // Lens: refract the image without mirror reflection.
-   // Convex lens bends rays toward the optical axis; concave lens bends them away.
-   float lensBend = (convexMode>0.5 ? -1.0 : 1.0) * strength * 0.34;
-   float lensK = 1.0 + lensBend*r*r;
-   vec2 lensOffset = q*(lensK-1.0)*0.55;
-   sampleScreen = center + vec2((d.x + lensOffset.x*radius)/aspect, d.y + lensOffset.y*radius);
-   if(invertY>0.5) sampleScreen.y=center.y-(sampleScreen.y-center.y);
- }
- // Match the phone's CSS object-fit: cover mapping.
- vec2 sampleUV=sampleScreen;
- if(aspect>videoAspect){ sampleUV.y=0.5+(sampleScreen.y-0.5)*(aspect/videoAspect); }
- else { sampleUV.x=0.5+(sampleScreen.x-0.5)*(videoAspect/aspect); }
- sampleUV=clamp(sampleUV,vec2(0.001),vec2(0.999));
- vec4 c=texture2D(videoTex,sampleUV);
- float edge=smoothstep(1.0,.82,r); c.rgb*=mix(.84,1.05,edge);
- gl_FragColor=c;
-}
-`;
+ vec2 d=uv-center;d.x*=aspect;float rr=length(d);if(rr>radius)discard;
+ vec2 q=d/radius;float r=length(q);
+ float k=1.0/(1.0+(convexMode>.5?-strength:strength)*.55*r*r);
+ vec2 curved=q*k*imageScale;vec2 sampleScreen=center+vec2(curved.x/aspect,curved.y);
+ if(lensMode<.5){sampleScreen.x=center.x-(sampleScreen.x-center.x);if(invertY>.5)sampleScreen.y=center.y-(sampleScreen.y-center.y);}
+ else{float bend=(convexMode>.5?-1.0:1.0)*strength*.34;float lk=1.0+bend*r*r;vec2 off=q*(lk-1.0)*.55;sampleScreen=center+vec2((d.x+off.x*radius)/aspect,d.y+off.y*radius);if(invertY>.5)sampleScreen.y=center.y-(sampleScreen.y-center.y);}
+ vec2 su=sampleScreen;if(aspect>videoAspect)su.y=.5+(sampleScreen.y-.5)*(aspect/videoAspect);else su.x=.5+(sampleScreen.x-.5)*(videoAspect/aspect);
+ su=clamp(su,vec2(.001),vec2(.999));vec4 color=texture2D(videoTex,su);float edge=smoothstep(1.,.82,r);color.rgb*=mix(.84,1.05,edge);gl_FragColor=color;
+}`;
+
 function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s}
-function init(){
+function initGL(){
  if(!gl)return;
  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
- program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,VS));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,FS));gl.linkProgram(program);
- gl.useProgram(program);
+ program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,VS));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,FS));gl.linkProgram(program);gl.useProgram(program);
  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
  const p=gl.getAttribLocation(program,'p');gl.enableVertexAttribArray(p);gl.vertexAttribPointer(p,2,gl.FLOAT,false,0,0);
  tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
- gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
- gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
- loc.videoTex=gl.getUniformLocation(program,'videoTex');loc.center=gl.getUniformLocation(program,'center');loc.radius=gl.getUniformLocation(program,'radius');loc.strength=gl.getUniformLocation(program,'strength');loc.aspect=gl.getUniformLocation(program,'aspect');loc.imageScale=gl.getUniformLocation(program,'imageScale');loc.invertY=gl.getUniformLocation(program,'invertY');loc.videoAspect=gl.getUniformLocation(program,'videoAspect');loc.convexMode=gl.getUniformLocation(program,'convexMode');loc.lensMode=gl.getUniformLocation(program,'lensMode');
- gl.clearColor(0,0,0,0);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+ ['videoTex','center','radius','strength','aspect','imageScale','invertY','videoAspect','convexMode','lensMode'].forEach(n=>loc[n]=gl.getUniformLocation(program,n));
 }
-function updateRing(){const el=document.getElementById('mirrorRing');el.style.left=((mirror.x-mirror.r)*100)+'%';el.style.top=((mirror.y-mirror.r)*100)+'%';el.style.width=(mirror.r*2*100)+'%';} function resize(){const d=Math.min(devicePixelRatio||1,1.5),r=canvas.getBoundingClientRect();canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));draw()}
+function resize(){if(!gl)return;const d=Math.min(devicePixelRatio||1,1.5),r=canvas.getBoundingClientRect();canvas.width=Math.max(1,r.width*d);canvas.height=Math.max(1,r.height*d);draw()}
 function draw(){
  if(!gl||!video.videoWidth)return;
- gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT);
- gl.useProgram(program);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);
- if(!videoTextureReady){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);videoTextureReady=true;}else{gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,video);}
- const q=+curv.value/100,rect=canvas.getBoundingClientRect();
- const aspect=rect.width/rect.height;
- let scale=1.0,inverted=0.0; let lensVirtual=0.0;
- const f=1.0,u=objectDistance;
- if(system==='lens'){ 
-   const isConvex=mode===0;
-   if(isConvex){
-     if(objectPosition==='infinity'){scale=.22;inverted=1.0;}
-     else if(objectPosition==='C'){scale=1.0;inverted=1.0;}
-     else if(objectPosition==='F'){scale=2.6;inverted=1.0;}
-     else {scale=2.1;inverted=0.0;lensVirtual=1.0;}
-   }else{
-     scale=.62; inverted=0.0; lensVirtual=1.0;
-   }
- } else if(mode===0){
-   if(objectPosition==='infinity'){scale=.28;inverted=1.0;}
-   else if(objectPosition==='C'){scale=1.0;inverted=1.0;}
-   else if(objectPosition==='F'){scale=2.8;inverted=1.0;}
-   else {scale=2.2;inverted=0.0;}
- }else{
-   if(objectPosition==='infinity')scale=.30;
-   else if(objectPosition==='C')scale=.58;
-   else if(objectPosition==='F')scale=.66;
-   else scale=.74;
-   inverted=0.0;
- }
- scale*=1.0+q*.18;
- gl.uniform1i(loc.videoTex,0);
- gl.uniform2f(loc.center,mirror.x,1-mirror.y);
- gl.uniform1f(loc.radius,mirror.r);
- gl.uniform1f(loc.strength,q);
- gl.uniform1f(loc.aspect,aspect);
- gl.uniform1f(loc.imageScale,scale);
- gl.uniform1f(loc.invertY,inverted);
- gl.uniform1f(loc.videoAspect,video.videoWidth/video.videoHeight);
-gl.uniform1f(loc.convexMode,system==='mirror' ? (mode===1?1.0:0.0) : (mode===0?1.0:0.0));
- gl.uniform1f(loc.lensMode,system==='lens'?1.0:0.0);
- // Person focus keeps the optical effect centered on the virtual mirror/object area.
- // Full scene mode expands the effect to the entire selected mirror/lens surface.
-
+ const r=canvas.getBoundingClientRect(),aspect=r.width/r.height,q=+curv.value/100;
+ gl.viewport(0,0,canvas.width,canvas.height);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(program);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);
+ if(!videoTextureReady){gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);videoTextureReady=true}else gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,video);
+ let scale=1,invert=0;
+ const p=state.position;
+ if(state.device==='mirror'&&state.type===0){
+  if(p==='infinity')scale=.22,invert=1;else if(p==='beyondC')scale=.55,invert=1;else if(p==='C')scale=1,invert=1;else if(p==='betweenCF')scale=1.75,invert=1;else if(p==='F')scale=2.5,invert=1;else scale=2.1;
+ }else if(state.device==='mirror'){scale=p==='infinity'?.3:.55}
+ else if(state.type===0){
+  if(p==='infinity')scale=.22,invert=1;else if(p==='beyond2F')scale=.55,invert=1;else if(p==='2F')scale=1,invert=1;else if(p==='betweenF2F')scale=1.7,invert=1;else if(p==='F')scale=2.5,invert=1;else scale=2.1;
+ }else scale=.62;
+ scale*=1+q*.18;
+ gl.uniform1i(loc.videoTex,0);gl.uniform2f(loc.center,state.mirror.x,1-state.mirror.y);gl.uniform1f(loc.radius,state.mirror.r);gl.uniform1f(loc.strength,q);gl.uniform1f(loc.aspect,aspect);gl.uniform1f(loc.imageScale,scale);gl.uniform1f(loc.invertY,invert);gl.uniform1f(loc.videoAspect,video.videoWidth/video.videoHeight);gl.uniform1f(loc.convexMode,state.device==='mirror'?(state.type?1:0):(state.type?0:1));gl.uniform1f(loc.lensMode,state.device==='lens'?1:0);
  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 }
-function videoFrame(){draw();if(video.requestVideoFrameCallback)video.requestVideoFrameCallback(videoFrame);else raf=requestAnimationFrame(videoFrame)}
-async function startCamera(){
- if(stream)stream.getTracks().forEach(t=>t.stop());
- try{
-  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}},audio:false});
-  video.srcObject=stream;await video.play();start.classList.add('hide');dot.classList.add('live');statusEl.textContent='Camera live';videoFrame();
- }catch(e){statusEl.textContent='Camera blocked';start.textContent=e.name==='NotAllowedError'?'Allow camera access':'Camera unavailable'}
+function frame(){draw();if(video.requestVideoFrameCallback)video.requestVideoFrameCallback(frame);}
+
+const positionSets={
+ mirrorConcave:[['infinity','∞','Far'],['beyondC','>C','Beyond C'],['C','C','At C'],['betweenCF','C–F','Between'],['F','F','Focus'],['insideF','F–P','Between']],
+ mirrorConvex:[['infinity','∞','Far'],['betweenPF','P–∞','Any position']],
+ lensConvex:[['infinity','∞','Far'],['beyond2F','>2F','Beyond 2F'],['2F','2F','At 2F'],['betweenF2F','F–2F','Between'],['F','F','Focus'],['insideF','O–F','Inside F']],
+ lensConcave:[['infinity','∞','Far'],['insideF','O–F','Any position']]
+};
+function positionSet(){
+ if(state.device==='mirror')return state.type===0?positionSets.mirrorConcave:positionSets.mirrorConvex;
+ return state.type===0?positionSets.lensConvex:positionSets.lensConcave;
 }
-function updateRayGraph(){
- const obj=document.getElementById('rayObject');
- const img=document.getElementById('rayImage');
- const type=document.getElementById('rayType');
- const surface=document.getElementById('opticalSurface');
- const ia=document.getElementById('imageArrow');
- const oa=document.getElementById('objectArrow');
- const aux=[...document.querySelectorAll('.rayAux')];
- const labels=[...document.querySelectorAll('.rayLabel')];
- const axis=document.querySelector('.rayMain');
- const dots=[...document.querySelectorAll('.rayGraph circle')];
-
- let ox=34,oh=24,ix=82,ih=12,virtual=false,infinity=false;
- let title='';
- let label1='F',label2='C / 2F',d1x=70,d2x=92;
- let surfacePath='M118 18 Q92 62 118 106';
-
- if(system==='mirror' && mode===0){
-   title='Concave mirror';
-   const m={
-    infinity:[18,8,70,6,false,false],
-    beyondC:[28,17,82,11,false,false],
-    C:[92,23,92,23,false,false],
-    betweenCF:[105,31,140,36,false,false],
-    F:[110,27,166,5,false,true],
-    insideF:[110,24,139,37,true,false]
-   }[objectPosition]||[92,23,92,23,false,false];
-   [ox,oh,ix,ih,virtual,infinity]=m;
- }else if(system==='mirror'){
-   title='Convex mirror';
-   surfacePath='M118 18 Q144 62 118 106';
-   d1x=132;d2x=156;label1='F';label2='C';
-   const m=objectPosition==='infinity'?[18,8,138,6,true,false]:[35,24,138,13,true,false];
-   [ox,oh,ix,ih,virtual,infinity]=m;
- }else if(system==='lens' && mode===0){
-   title='Convex lens';
-   surfacePath='M118 18 Q106 62 118 106';
-   d1x=78;d2x=48;label1='F₁';label2='2F₁';
-   const m={
-    infinity:[18,8,158,6,false,false],
-    beyond2F:[30,18,166,11,false,false],
-    2F:[48,23,170,23,false,false],
-    betweenF2F:[65,32,178,36,false,false],
-    F:[78,27,170,5,false,true],
-    insideF:[95,25,92,38,true,false]
-   }[objectPosition]||[48,23,170,23,false,false];
-   [ox,oh,ix,ih,virtual,infinity]=m;
- }else{
-   title='Concave lens';
-   surfacePath='M118 18 Q130 62 118 106';
-   d1x=78;d2x=158;label1='F₁';label2='F₂';
-   const m=[42,23,101,12,true,false];
-   [ox,oh,ix,ih,virtual,infinity]=m;
- }
-
- type.textContent=title;
- surface.setAttribute('d',surfacePath);
-
- if(system==='lens'){
-   labels.forEach((t,i)=>{
-     if(i===1)t.textContent=label1;
-     if(i===2)t.textContent=label2;
-   });
- }else{
-   labels.forEach((t,i)=>{
-     if(i===1)t.textContent=label1;
-     if(i===2)t.textContent=label2;
-   });
- }
- if(dots[0]){dots[0].setAttribute('cx',d1x);dots[0].setAttribute('cy','62');}
- if(dots[1]){dots[1].setAttribute('cx',d2x);dots[1].setAttribute('cy','62');}
-
- obj.setAttribute('x1',ox);obj.setAttribute('x2',ox);
- obj.setAttribute('y1',62);obj.setAttribute('y2',62-oh);
- oa.setAttribute('points',ox+','+(62-oh-5)+' '+(ox-4)+','+(62-oh+3)+' '+(ox+4)+','+(62-oh+3));
-
- img.setAttribute('x1',ix);img.setAttribute('x2',ix);
- img.setAttribute('y1',62);img.setAttribute('y2',virtual?62-ih:62-ih);
- ia.setAttribute('points',ix+','+(62-ih-5)+' '+(ix-4)+','+(62-ih+3)+' '+(ix+4)+','+(62-ih+3));
- ia.setAttribute('fill',virtual?'#39d98a':'#39d98a');
-
- if(infinity){
-   img.setAttribute('x1',166);img.setAttribute('x2',166);
-   img.setAttribute('y1',62);img.setAttribute('y2',62);
- }
- if(aux.length>=2){
-   if(system==='mirror' && mode===0){
-     aux[0].setAttribute('x1',ox);aux[0].setAttribute('y1',62-oh);aux[0].setAttribute('x2',118);aux[0].setAttribute('y2',62-oh);
-     aux[1].setAttribute('x1',118);aux[1].setAttribute('y1',62-oh);aux[1].setAttribute('x2',ix);aux[1].setAttribute('y2',62-ih);
-   }else if(system==='lens'){
-     aux[0].setAttribute('x1',ox);aux[0].setAttribute('y1',62-oh);aux[0].setAttribute('x2',118);aux[0].setAttribute('y2',62);
-     aux[1].setAttribute('x1',118);aux[1].setAttribute('y1',62);aux[1].setAttribute('x2',ix);aux[1].setAttribute('y2',62-ih);
-   }else{
-     aux[0].setAttribute('x1',ox);aux[0].setAttribute('y1',62-oh);aux[0].setAttribute('x2',118);aux[0].setAttribute('y2',62-oh);
-     aux[1].setAttribute('x1',118);aux[1].setAttribute('y1',62-oh);aux[1].setAttribute('x2',ix);aux[1].setAttribute('y2',62-ih);
-   }
- }
-}
-function updateLesson(){
- if(system==='lens'){
-   if(mode===0){
-     if(objectPosition==='infinity') lesson.textContent='Convex lens at ∞: real, inverted and highly diminished image forms near F.';
-     else if(objectPosition==='C') lesson.textContent='Convex lens at 2F: real, inverted and same-size image forms at 2F.';
-     else if(objectPosition==='F') lesson.textContent='Convex lens at F: refracted rays become parallel — image tends to infinity.';
-     else lesson.textContent='Convex lens inside F: virtual, upright and magnified image forms on the object side.';
-   }else lesson.textContent='Concave lens: virtual, upright and diminished image for all object positions.';
- }else{
-   if(mode===1)lesson.textContent='Convex mirror: virtual, upright and reduced image for all positions.';
-   else if(objectPosition==='infinity')lesson.textContent='At ∞: real, inverted and highly diminished image forms near F.';
-   else if(objectPosition==='C')lesson.textContent='At C (2F): real, inverted and same-size image forms at C.';
-   else if(objectPosition==='F')lesson.textContent='At F: reflected rays are nearly parallel — image moves toward infinity.';
-   else lesson.textContent='At P: virtual, upright and magnified image forms behind the mirror.';
- }
-}
-function configurePositions(){
- const el=document.getElementById('points');
- const defs=system==='lens'
-   ? (mode===0
-      ? [['infinity','∞','Far'],['beyond2F','>2F','Beyond 2F'],['2F','2F','At 2F'],['betweenF2F','F–2F','Between'],['F','F','Focus'],['insideF','O–F','Inside F']]
-      : [['infinity','∞','Far'],['insideF','O–F','Any position']])
-   : (mode===0
-      ? [['infinity','∞','Far'],['beyondC','>C','Beyond C'],['C','C','At C'],['betweenCF','C–F','Between'],['F','F','Focus'],['insideF','F–P','Between F–P']]
-      : [['infinity','∞','Far'],['betweenPF','P–∞','Any position']]);
- if(!defs.some(d=>d[0]===objectPosition)) objectPosition=defs[0][0];
- el.innerHTML=defs.map(d=>'<button class="point '+(d[0]===objectPosition?'active':'')+'" data-pos="'+d[0]+'">'+d[1]+'<small>'+d[2]+'</small></button>').join('');
- points=[...el.querySelectorAll('.point')];
- points.forEach(btn=>btn.onclick=()=>{
-   objectPosition=btn.dataset.pos;
-   points.forEach(b=>b.classList.toggle('active',b===btn));
-   distVal.textContent=positionName();
-   updateLesson();updateRayGraph();draw();
- });
+function positionName(){const d=positionSet().find(x=>x[0]===state.position);return d?d[2]:'Object position'}
+function renderPositions(){
+ const defs=positionSet();if(!defs.some(x=>x[0]===state.position))state.position=defs[0][0];
+ pointsEl.innerHTML=defs.map(x=>'<button class="point '+(x[0]===state.position?'active':'')+'" data-pos="'+x[0]+'">'+x[1]+'<small>'+x[2]+'</small></button>').join('');
+ points=[...pointsEl.querySelectorAll('.point')];
+ points.forEach(b=>b.onclick=()=>{state.position=b.dataset.pos;renderPositions();renderAll()});
  distVal.textContent=positionName();
 }
-function positionName(){
- const names={infinity:'At infinity',beyondC:'Beyond C',C:'At C',betweenCF:'Between C–F',F:'At F',insideF:'Between F–P',beyond2F:'Beyond 2F',2F:'At 2F',betweenF2F:'Between F–2F',insideF:'Inside F',betweenPF:'Between P and infinity'};
- return names[objectPosition]||'Object position';
+function updateLesson(){
+ const p=state.position;
+ if(state.device==='mirror'){
+  if(state.type===0){
+   lesson.textContent={infinity:'At infinity: real, inverted and highly diminished image forms at F.',beyondC:'Beyond C: real, inverted and diminished image forms between F and C.',C:'At C: real, inverted and same-size image forms at C.',betweenCF:'Between C and F: real, inverted and magnified image forms beyond C.',F:'At F: reflected rays are parallel; image forms at infinity.',insideF:'Between F and P: virtual, upright and magnified image forms behind the mirror.'}[p];
+  }else lesson.textContent=p==='infinity'?'At infinity: virtual, upright and diminished image forms near F behind the mirror.':'Convex mirror: virtual, upright and diminished image forms behind the mirror.';
+ }else if(state.type===0){
+  lesson.textContent={infinity:'At infinity: real, inverted and highly diminished image forms near F₂.',beyond2F:'Beyond 2F₁: real, inverted and diminished image forms between F₂ and 2F₂.',2F:'At 2F₁: real, inverted and same-size image forms at 2F₂.',betweenF2F:'Between F₁ and 2F₁: real, inverted and magnified image forms beyond 2F₂.',F:'At F₁: refracted rays are parallel; image forms at infinity.',insideF:'Inside F₁: virtual, upright and magnified image forms on the object side.'}[p];
+ }else lesson.textContent='Concave lens: virtual, upright and diminished image for all object positions.';
 }
-function updateSystemUI(){
- const mt=document.getElementById('mirrorTypes'),lt=document.getElementById('lensTypes'),dt=document.getElementById('deviceTypeTitle');
- mt.style.display=system==='mirror'?'grid':'none';
- lt.style.display=system==='lens'?'grid':'none';
- dt.textContent=system==='mirror'?'Mirror type':'Lens type';
- systemSelect.value=system; viewSelect.value=viewMode;
- configurePositions();
- updateLesson();updateRayGraph();draw();
+function updateRayGraph(){
+ const type=$('rayType'),surface=$('opticalSurface'),obj=$('rayObject'),img=$('rayImage'),oa=$('objectArrow'),ia=$('imageArrow'),dots=[...document.querySelectorAll('.rayGraph circle')],labs=[...document.querySelectorAll('.rayLabel')];
+ let ox=40,oh=23,ix=90,ih=15,virtual=false;
+ if(state.device==='mirror'&&state.type===0){
+  const m={infinity:[18,8,70,6],beyondC:[30,17,82,11],C:[42,23,42,23],betweenCF:[52,31,140,36],F:[58,27,160,5],insideF:[68,24,145,28]}[state.position]||[42,23,42,23];[ox,oh,ix,ih]=m;virtual=state.position==='insideF';type.textContent='Concave mirror';surface.setAttribute('d','M118 18 Q92 62 118 106');
+ }else if(state.device==='mirror'){
+  [ox,oh,ix,ih]=state.position==='infinity'?[18,8,138,6]:[40,24,138,13];virtual=true;type.textContent='Convex mirror';surface.setAttribute('d','M118 18 Q144 62 118 106');
+ }else if(state.type===0){
+  const m={infinity:[18,8,158,6],beyond2F:[30,18,166,11],2F:[48,23,170,23],betweenF2F:[65,32,178,36],F:[78,27,170,5],insideF:[95,25,92,38]}[state.position]||[48,23,170,23];[ox,oh,ix,ih]=m;virtual=state.position==='insideF';type.textContent='Convex lens';surface.setAttribute('d','M118 18 Q106 62 118 106');
+ }else{[ox,oh,ix,ih]=[42,23,101,12];virtual=true;type.textContent='Concave lens';surface.setAttribute('d','M118 18 Q130 62 118 106')}
+ obj.setAttribute('x1',ox);obj.setAttribute('x2',ox);obj.setAttribute('y1',62);obj.setAttribute('y2',62-oh);oa.setAttribute('points',ox+','+(62-oh-5)+' '+(ox-4)+','+(62-oh+3)+' '+(ox+4)+','+(62-oh+3));
+ img.setAttribute('x1',ix);img.setAttribute('x2',ix);img.setAttribute('y1',62);img.setAttribute('y2',62-ih);ia.setAttribute('points',ix+','+(62-ih-5)+' '+(ix-4)+','+(62-ih+3)+' '+(ix+4)+','+(62-ih+3));
+ if(dots[0]){dots[0].setAttribute('cx',state.device==='lens'?78:(state.type?138:70));dots[0].setAttribute('cy',62)}
+ if(dots[1]){dots[1].setAttribute('cx',state.device==='lens'?48:(state.type?158:92));dots[1].setAttribute('cy',62)}
+ labs.forEach((x,i)=>{if(i===1)x.textContent=state.device==='lens'?'F₁':'F';if(i===2)x.textContent=state.device==='lens'?'2F₁':'C / 2F'});
 }
-function setMode(m){
- mode=m;
- const isLens=system==='lens';
- (isLens?lensConvex:concave).classList.toggle('active',m===0);
- (isLens?lensConcave:convex).classList.toggle('active',m===1);
- configurePositions();
- updateLesson();updateRayGraph();draw();
+function updateDevice(){
+ mirrorTypes.style.display=state.device==='mirror'?'grid':'none';lensTypes.style.display=state.device==='lens'?'grid':'none';
+ $('deviceTypeTitle').textContent=state.device==='mirror'?'Mirror type':'Lens type';
+ systemSelect.value=state.device;viewSelect.value=state.view;renderPositions();updateLesson();updateRayGraph();draw();
 }
-start.onclick=startCamera;
-systemSelect.onchange=()=>{system=systemSelect.value;setMode(0);updateSystemUI()};
-viewSelect.onchange=()=>{viewMode=viewSelect.value;draw()};
+function renderAll(){updateDevice()}
+systemSelect.onchange=()=>{state.device=systemSelect.value;state.type=0;state.position=positionSet()[0][0];renderAll()};
+viewSelect.onchange=()=>{state.view=viewSelect.value;draw()};
 actionSelect.onchange=()=>{
- const action=actionSelect.value;
- if(action==='camera'){facing=facing==='user'?'environment':'user';startCamera();}
- if(action==='reset'){mirror={x:.5,y:.47,r:.28};updateRing();draw();}
+ if(actionSelect.value==='camera'){state.facing=state.facing==='user'?'environment':'user';startCamera()}
+ if(actionSelect.value==='reset'){state.mirror={x:.5,y:.47,r:.28};updateRing();draw()}
  actionSelect.value='';
 };
-document.getElementById('concave').onclick=()=>{system='mirror';setMode(0);updateSystemUI()};
-document.getElementById('convex').onclick=()=>{system='mirror';setMode(1);updateSystemUI()};
-document.getElementById('lensConvex').onclick=()=>{system='lens';setMode(0);updateSystemUI()};
-document.getElementById('lensConcave').onclick=()=>{system='lens';setMode(1);updateSystemUI()};
+concave.onclick=()=>{state.device='mirror';state.type=0;renderAll()};
+convex.onclick=()=>{state.device='mirror';state.type=1;renderAll()};
+lensConvex.onclick=()=>{state.device='lens';state.type=0;renderAll()};
+lensConcave.onclick=()=>{state.device='lens';state.type=1;renderAll()};
 curv.oninput=()=>{curvVal.textContent=curv.value+'%';draw()};
-window.addEventListener('resize',resize);
-canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;const dx=(x-mirror.x)*r.width/r.height,dy=y-mirror.y;if(Math.hypot(dx,dy)<mirror.r){drag={x,y,mx:mirror.x,my:mirror.y};canvas.setPointerCapture(e.pointerId)}});
-canvas.addEventListener('pointermove',e=>{if(!drag)return;const r=canvas.getBoundingClientRect();mirror.x=Math.max(mirror.r*r.height/r.width,Math.min(1-mirror.r*r.height/r.width,drag.mx+(e.clientX-r.left)/r.width-drag.x));mirror.y=Math.max(mirror.r,Math.min(1-mirror.r,drag.my+(e.clientY-r.top)/r.height-drag.y));updateRing();draw()});
+
+async function startCamera(){
+ if(state.stream)state.stream.getTracks().forEach(t=>t.stop());
+ try{
+  state.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:state.facing},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}},audio:false});
+  video.srcObject=state.stream;await video.play();start.classList.add('hide');dot.classList.add('live');statusEl.textContent='Camera live';videoTextureReady=false;frame();
+ }catch(e){statusEl.textContent='Camera blocked';start.textContent=e.name==='NotAllowedError'?'Allow camera access':'Camera unavailable'}
+}
+start.onclick=startCamera;
+canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;const dx=(x-state.mirror.x)*r.width/r.height,dy=y-state.mirror.y;if(Math.hypot(dx,dy)<state.mirror.r){drag={x,y,mx:state.mirror.x,my:state.mirror.y};canvas.setPointerCapture(e.pointerId)}});
+canvas.addEventListener('pointermove',e=>{if(!drag)return;const r=canvas.getBoundingClientRect();state.mirror.x=Math.max(state.mirror.r*r.height/r.width,Math.min(1-state.mirror.r*r.height/r.width,drag.mx+(e.clientX-r.left)/r.width-drag.x));state.mirror.y=Math.max(state.mirror.r,Math.min(1-state.mirror.r,drag.my+(e.clientY-r.top)/r.height-drag.y));updateRing();draw()});
 canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
-init();updateRing();resize();configurePositions();setMode(0);
+window.addEventListener('resize',resize);
+initGL();renderAll();updateRing();resize();
 </script>
 </body>
 </html>
