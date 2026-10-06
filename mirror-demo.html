@@ -226,14 +226,23 @@ function updateSystemUI(){
    : (objectPosition==='infinity'?'∞ · Far':objectPosition==='C'?'2F':objectPosition==='F'?'F · Focus':'O · Optical');
  updateLesson(); draw();
 }
-function setMode(m){mode=m;updateLesson();draw()}
+function setMode(m){
+ mode=m;
+ const isLens=system==='lens';
+ (isLens?lensConvex:concave).classList.toggle('active',m===0);
+ (isLens?lensConcave:convex).classList.toggle('active',m===1);
+ updateLesson();draw();
+}
 start.onclick=startCamera;
 mirrorMode.onclick=()=>{system='mirror';setMode(0);updateSystemUI()};
+
 personMode.onclick=()=>{viewMode='person';personMode.classList.add('active');sceneMode.classList.remove('active');draw()};
 sceneMode.onclick=()=>{viewMode='scene';sceneMode.classList.add('active');personMode.classList.remove('active');draw()};
 lensMode.onclick=()=>{system='lens';setMode(0);updateSystemUI()};
-concave.onclick=()=>setMode(0); convex.onclick=()=>setMode(1);
-lensConvex.onclick=()=>setMode(0); lensConcave.onclick=()=>setMode(1);
+document.getElementById('concave').addEventListener('click',()=>{system='mirror';setMode(0);updateSystemUI()});
+document.getElementById('convex').addEventListener('click',()=>{system='mirror';setMode(1);updateSystemUI()});
+document.getElementById('lensConvex').addEventListener('click',()=>{system='lens';setMode(0);updateSystemUI()});
+document.getElementById('lensConcave').addEventListener('click',()=>{system='lens';setMode(1);updateSystemUI()});
 document.getElementById('flip').onclick=()=>{facing=facing==='user'?'environment':'user';startCamera()};
 document.getElementById('reset').onclick=()=>{mirror={x:.5,y:.47,r:.28};updateRing();draw()};
 curv.oninput=()=>{curvVal.textContent=curv.value+'%';draw()};
