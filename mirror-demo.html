@@ -47,17 +47,19 @@ input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
 <section class="controls">
  <div class="segment"><button id="concave" class="active">Concave</button><button id="convex">Convex</button></div>
  <div class="tools"><button class="tool" id="flip">↔ Camera</button><button class="tool" id="reset">Reset mirror</button></div>
- <label><span>Curvature</span><span id="curvVal">55%</span></label>
+ <label><span>Object distance</span><span id="distVal">2.0 m</span></label>
+ <input id="dist" type="range" min="0.5" max="5" step="0.1" value="2">
+ <label><span>Mirror curvature</span><span id="curvVal">55%</span></label>
  <input id="curv" type="range" min="15" max="90" value="55">
- <div id="lesson">Concave: stronger curvature produces stronger central magnification. Drag the circular mirror to explore.</div>
+ <div id="lesson">At C (2F): real, inverted, same-size image.</div>
 </section>
 </div>
 <script>
 const video=document.getElementById('camera'),canvas=document.getElementById('mirrorGL');
 const start=document.getElementById('start'),dot=document.getElementById('dot'),statusEl=document.getElementById('status');
-const curv=document.getElementById('curv'),curvVal=document.getElementById('curvVal'),lesson=document.getElementById('lesson');
+const curv=document.getElementById('curv'),curvVal=document.getElementById('curvVal'),dist=document.getElementById('dist'),distVal=document.getElementById('distVal'),lesson=document.getElementById('lesson');
 const gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});
-let stream=null,facing='user',mode=0,mirror={x:.5,y:.47,r:.28},drag=null,tex,program,raf=0;
+let stream=null,facing='user',mode=0,mirror={x:.5,y:.47,r:.28},drag=null,tex,program,raf=0,objectDistance=2;
 
 const VS=`
 attribute vec2 p; varying vec2 uv;
@@ -69,29 +71,22 @@ uniform sampler2D videoTex;
 uniform vec2 center;
 uniform float radius;
 uniform float strength;
-uniform float mode;
 uniform float aspect;
+uniform float imageScale;
+uniform float invertY;
 varying vec2 uv;
 void main(){
- vec2 d=uv-center;
- d.x*=aspect;
- float rr=length(d);
- if(rr>radius){discard;}
- float q=rr/radius;
- float k;
- if(mode<.5){
-   // Concave: source radius is compressed toward the optical axis -> magnification.
-   k=1.0/(1.0+strength*0.82*q*q);
- }else{
-   // Convex: source radius expands toward the edge -> reduction / wide angle.
-   k=1.0+strength*0.62*q*q;
- }
- vec2 sampleUV=center+d*k;
+ vec2 d=uv-center; d.x*=aspect;
+ float rr=length(d); if(rr>radius){discard;}
+ vec2 q=d/radius; float r=length(q);
+ float k=1.0/(1.0+strength*0.55*r*r);
+ vec2 curved=q*k*imageScale;
+ vec2 sampleUV=center+vec2(curved.x/aspect,curved.y);
+ if(invertY>0.5) sampleUV.y=1.0-sampleUV.y;
  sampleUV.x=1.0-sampleUV.x;
- sampleUV.y=1.0-sampleUV.y;
+ sampleUV.y=clamp(sampleUV.y,0.001,0.999);
  vec4 c=texture2D(videoTex,sampleUV);
- float edge=smoothstep(1.0,.82,q);
- c.rgb*=mix(.84,1.05,edge);
+ float edge=smoothstep(1.0,.82,r); c.rgb*=mix(.84,1.05,edge);
  gl_FragColor=c;
 }
 `;
@@ -115,12 +110,21 @@ function draw(){
  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,video);
  const q=+curv.value/100,rect=canvas.getBoundingClientRect();
  const aspect=rect.width/rect.height;
+ let scale=1.0,inverted=0.0;
+ const f=1.0,u=objectDistance;
+ if(mode===0){
+   if(Math.abs(u-f)<0.06){scale=2.8;inverted=1.0;}
+   else if(u>f){const v=(f*u)/(u-f);scale=Math.min(2.2,Math.max(.18,Math.abs(v/u)));inverted=1.0;}
+   else {const m=f/(f-u);scale=Math.min(2.6,Math.max(1.0,m));inverted=0.0;}
+ }else{scale=Math.max(.12,Math.min(1.0,f/(u+f)));inverted=0.0;}
+ scale*=1.0+q*.18;
  gl.uniform1i(gl.getUniformLocation(program,'videoTex'),0);
  gl.uniform2f(gl.getUniformLocation(program,'center'),mirror.x,1-mirror.y);
  gl.uniform1f(gl.getUniformLocation(program,'radius'),mirror.r);
  gl.uniform1f(gl.getUniformLocation(program,'strength'),q);
- gl.uniform1f(gl.getUniformLocation(program,'mode'),mode);
  gl.uniform1f(gl.getUniformLocation(program,'aspect'),aspect);
+ gl.uniform1f(gl.getUniformLocation(program,'imageScale'),scale);
+ gl.uniform1f(gl.getUniformLocation(program,'invertY'),inverted);
  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
 }
 function videoFrame(){draw();if(video.requestVideoFrameCallback)video.requestVideoFrameCallback(videoFrame);else raf=requestAnimationFrame(videoFrame)}
@@ -131,12 +135,13 @@ async function startCamera(){
   video.srcObject=stream;await video.play();start.classList.add('hide');dot.classList.add('live');statusEl.textContent='Camera live';videoFrame();
  }catch(e){statusEl.textContent='Camera blocked';start.textContent=e.name==='NotAllowedError'?'Allow camera access':'Camera unavailable'}
 }
-function setMode(m){mode=m;document.getElementById('concave').classList.toggle('active',!m);document.getElementById('convex').classList.toggle('active',!!m);lesson.textContent=m?'Convex: the image stays upright, reduced and wider as curvature increases.':'Concave: the centre becomes enlarged and curved, like the circular mirror in the reference video.';draw()}
+function updateLesson(){const u=objectDistance;if(mode===1)lesson.textContent='Convex: virtual, upright and reduced for every object distance.';else if(Math.abs(u-1)<.06)lesson.textContent='At F: reflected rays are nearly parallel — image moves toward infinity.';else if(u>2.06)lesson.textContent='Beyond C: real, inverted and diminished image.';else if(u>1.94)lesson.textContent='At C (2F): real, inverted and same-size image.';else if(u>1.06)lesson.textContent='Between F and C: real, inverted and magnified image.';else lesson.textContent='Inside F: virtual, upright and magnified image.';}
+function setMode(m){mode=m;document.getElementById('concave').classList.toggle('active',!m);document.getElementById('convex').classList.toggle('active',!!m);updateLesson();draw()}
 start.onclick=startCamera;
 document.getElementById('concave').onclick=()=>setMode(0);document.getElementById('convex').onclick=()=>setMode(1);
 document.getElementById('flip').onclick=()=>{facing=facing==='user'?'environment':'user';startCamera()};
 document.getElementById('reset').onclick=()=>{mirror={x:.5,y:.47,r:.28};draw()};
-curv.oninput=()=>{curvVal.textContent=curv.value+'%';draw()};
+curv.oninput=()=>{curvVal.textContent=curv.value+'%';draw()};dist.oninput=()=>{objectDistance=+dist.value;distVal.textContent=objectDistance.toFixed(1)+' m';updateLesson();draw()};
 window.addEventListener('resize',resize);
 canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;const dx=(x-mirror.x)*r.width/r.height,dy=y-mirror.y;if(Math.hypot(dx,dy)<mirror.r){drag={x,y,mx:mirror.x,my:mirror.y};canvas.setPointerCapture(e.pointerId)}});
 canvas.addEventListener('pointermove',e=>{if(!drag)return;const r=canvas.getBoundingClientRect();mirror.x=Math.max(mirror.r*r.height/r.width,Math.min(1-mirror.r*r.height/r.width,drag.mx+(e.clientX-r.left)/r.width-drag.x));mirror.y=Math.max(mirror.r,Math.min(1-mirror.r,drag.my+(e.clientY-r.top)/r.height-drag.y));draw()});
