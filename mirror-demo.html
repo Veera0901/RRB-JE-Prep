@@ -327,10 +327,76 @@ function configurePositions(){
  if(!defs.some(d=>d[0]===objectPosition)) objectPosition=defs[0][0];
  el.innerHTML=defs.map(d=>'<button class="point '+(d[0]===objectPosition?'active':'')+'" data-pos="'+d[0]+'">'+d[1]+'<small>'+d[2]+'</small></button>').join('');
  points=[...el.querySelectorAll('.point')];
- window.addEventListener('resize',resize);
-canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;const dx=(x-mirror.x)*r.width/r.height,dy=y-mirror.y;if(Math.hypot(dx,dy)<mirror.r){drag={x,y,mx:mirror.x,my:mirror.y};canvas.setPointerCapture(e.pointerId)}});
-canvas.addEventListener('pointermove',e=>{if(!drag)return;const r=canvas.getBoundingClientRect();mirror.x=Math.max(mirror.r*r.height/r.width,Math.min(1-mirror.r*r.height/r.width,drag.mx+(e.clientX-r.left)/r.width-drag.x));mirror.y=Math.max(mirror.r,Math.min(1-mirror.r,drag.my+(e.clientY-r.top)/r.height-drag.y));updateRing();draw()});
-canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
+ points.forEach(btn=>btn.onclick=()=>{
+   objectPosition=btn.dataset.pos;
+   points.forEach(b=>b.classList.toggle('active',b===btn));
+   distVal.textContent=positionName();
+   updateLesson();updateRayGraph();draw();
+ });
+ distVal.textContent=positionName();
+}
+function positionName(){
+ const names={
+  infinity:'At infinity',beyondC:'Beyond C',C:'At C',betweenCF:'Between C–F',F:'At F',insideF:'Between F–P',
+  beyond2F:'Beyond 2F',2F:'At 2F',betweenF2F:'Between F–2F',betweenPF:'Between P and infinity'
+ };
+ return names[objectPosition]||'Object position';
+}
+function updateSystemUI(){
+ const mt=document.getElementById('mirrorTypes'),lt=document.getElementById('lensTypes');
+ mt.style.display=system==='mirror'?'grid':'none';
+ lt.style.display=system==='lens'?'grid':'none';
+ systemSelect.value=system;
+ viewSelect.value=viewMode;
+ document.getElementById('deviceTypeTitle').textContent=system==='lens'?'Lens type':'Mirror type';
+ configurePositions();
+ updateLesson();updateRayGraph();draw();
+}
+function setMode(m){
+ mode=m;
+ const isLens=system==='lens';
+ if(isLens){
+   lensConvex.classList.toggle('active',m===0);
+   lensConcave.classList.toggle('active',m===1);
+ }else{
+   concave.classList.toggle('active',m===0);
+   convex.classList.toggle('active',m===1);
+ }
+ configurePositions();
+ updateLesson();updateRayGraph();draw();
+}
+start.onclick=startCamera;
+systemSelect.onchange=()=>{
+ system=systemSelect.value;
+ setMode(0);
+ updateSystemUI();
+};
+viewSelect.onchange=()=>{viewMode=viewSelect.value;draw()};
+actionSelect.onchange=()=>{
+ const action=actionSelect.value;
+ if(action==='camera'){facing=facing==='user'?'environment':'user';startCamera();}
+ if(action==='reset'){mirror={x:.5,y:.47,r:.28};updateRing();draw();}
+ actionSelect.value='';
+};
+document.getElementById('concave').addEventListener('click',()=>{system='mirror';setMode(0);updateSystemUI()});
+document.getElementById('convex').addEventListener('click',()=>{system='mirror';setMode(1);updateSystemUI()});
+document.getElementById('lensConvex').addEventListener('click',()=>{system='lens';setMode(0);updateSystemUI()});
+document.getElementById('lensConcave').addEventListener('click',()=>{system='lens';setMode(1);updateSystemUI()});
+window.addEventListener('resize',resize);
+canvas.addEventListener('pointerdown',e=>{
+ const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+ const dx=(x-mirror.x)*r.width/r.height,dy=y-mirror.y;
+ if(Math.hypot(dx,dy)<mirror.r){drag={x,y,mx:mirror.x,my:mirror.y};canvas.setPointerCapture(e.pointerId)}
+});
+canvas.addEventListener('pointermove',e=>{
+ if(!drag)return;
+ const r=canvas.getBoundingClientRect();
+ mirror.x=Math.max(mirror.r*r.height/r.width,Math.min(1-mirror.r*r.height/r.width,drag.mx+(e.clientX-r.left)/r.width-drag.x));
+ mirror.y=Math.max(mirror.r,Math.min(1-mirror.r,drag.my+(e.clientY-r.top)/r.height-drag.y));
+ updateRing();draw();
+});
+canvas.addEventListener('pointerup',()=>drag=null);
+canvas.addEventListener('pointercancel',()=>drag=null);
 init();updateRing();resize();setMode(0);
 </script>
 </body>
