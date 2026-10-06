@@ -19,7 +19,7 @@ body{overscroll-behavior:none}button,select,input{font:inherit}button{border:0;c
 #mirrorGL{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 #shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.38),transparent 30%,transparent 58%,rgba(0,0,0,.76))}
 #mirrorRing{
- position:absolute;left:50%;top:39%;width:min(72vw,390px);aspect-ratio:1;
+ position:absolute;left:50%;top:40%;width:min(48vw,230px);aspect-ratio:1;
  transform:translate(-50%,-50%);border:2px solid rgba(255,255,255,.9);border-radius:50%;
  box-shadow:0 0 0 5px rgba(255,255,255,.045),0 0 45px rgba(124,108,255,.16),inset 0 0 42px rgba(124,108,255,.1);
  pointer-events:none;z-index:2
@@ -48,15 +48,15 @@ header{
 
 /* EXPERIMENT STAGE CARDS */
 .rayGraph{
- position:absolute;top:140px;left:12px;width:calc(62% - 10px);height:190px;z-index:12;
- padding:10px;border:1px solid rgba(255,255,255,.16);border-radius:20px;
- background:rgba(8,11,17,.91);backdrop-filter:blur(18px);box-shadow:0 14px 35px rgba(0,0,0,.4)
+ position:absolute;top:140px;left:12px;width:calc(58% - 10px);height:155px;z-index:12;
+ padding:9px;border:1px solid rgba(255,255,255,.16);border-radius:18px;
+ background:rgba(8,11,17,.97);backdrop-filter:blur(18px);box-shadow:0 14px 35px rgba(0,0,0,.4)
 }
-.rayGraphTitle{font-size:11px;font-weight:900;margin-bottom:4px}.rayGraph svg{display:block;width:100%;height:158px}
+.rayGraphTitle{font-size:11px;font-weight:900;margin-bottom:4px}.rayGraph svg{display:block;width:100%;height:125px}
 .rayLabel{font-size:10px;fill:#aab2c0}.rayMain{stroke:#eef2f7;stroke-width:1.2}.rayAux{stroke:#7c6cff;stroke-width:1;stroke-dasharray:3 2}.rayObj{stroke:#fff;stroke-width:2}.rayImg{stroke:#39d98a;stroke-width:2}
 #camera{
- position:absolute;top:140px;right:12px;width:calc(38% - 2px);height:190px;object-fit:cover;
- background:#111;border:1px solid rgba(255,255,255,.2);border-radius:20px;z-index:12;
+ position:absolute;top:140px;right:12px;width:calc(42% - 2px);height:155px;object-fit:cover;
+ background:#111;border:1px solid rgba(255,255,255,.2);border-radius:18px;z-index:12;
  box-shadow:0 14px 35px rgba(0,0,0,.42);transform:scaleX(-1)
 }
 .camera-label{position:absolute;top:150px;right:21px;z-index:13;padding:5px 8px;border-radius:8px;background:rgba(0,0,0,.58);font-size:8px;font-weight:900;pointer-events:none}
@@ -67,9 +67,9 @@ header{
 /* SETTINGS SHEET */
 .controls{
  position:absolute;left:10px;right:10px;bottom:9px;z-index:20;
- max-height:43vh;overflow:auto;padding:12px 12px 15px;
- border:1px solid rgba(255,255,255,.13);border-radius:23px;
- background:rgba(15,19,27,.96);backdrop-filter:blur(24px);box-shadow:0 20px 55px rgba(0,0,0,.62)
+ max-height:36vh;overflow:auto;padding:11px 12px 13px;
+ border:1px solid rgba(255,255,255,.13);border-radius:22px;
+ background:rgba(15,19,27,.98);backdrop-filter:blur(24px);box-shadow:0 20px 55px rgba(0,0,0,.62)
 }
 .sheetHandle{width:36px;height:4px;margin:0 auto 10px;border-radius:99px;background:rgba(255,255,255,.2)}
 .sectionTitle{margin:0 2px 6px;color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
@@ -89,10 +89,13 @@ input[type=range]{width:100%;margin:4px 0 0;accent-color:var(--accent)}
 
 @media(max-width:390px){
  header{padding-left:13px;padding-right:13px}.title{font-size:17px}
- .topBar{left:9px;right:9px;gap:5px}.topSelect{padding:6px 6px}.topSelect span{font-size:6px}.topSelect select{font-size:10px}
- .rayGraph{top:136px;left:9px;width:calc(62% - 8px);height:176px;padding:8px}.rayGraph svg{height:146px}
- #camera{top:136px;right:9px;width:calc(38% - 1px);height:176px}.camera-label{top:145px;right:16px}
- .controls{left:8px;right:8px;bottom:8px;max-height:44vh;padding:11px 10px 13px}
+ .topBar{top:70px;left:9px;right:9px;gap:5px}.topSelect{padding:6px}.topSelect span{font-size:6px}.topSelect select{font-size:10px}
+ .rayGraph{top:134px;left:9px;width:calc(58% - 7px);height:145px;padding:8px}.rayGraph svg{height:116px}
+ #camera{top:134px;right:9px;width:calc(42% - 2px);height:145px}.camera-label{top:143px;right:16px}
+ #mirrorRing{top:39%;width:min(44vw,190px)}
+ #tip{top:calc(39% + 105px);font-size:8px}
+ .controls{left:8px;right:8px;bottom:8px;max-height:35vh;padding:10px}
+ .point{min-height:54px}
 }
 </style><body>
 <div id="app">
