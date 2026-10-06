@@ -7,154 +7,99 @@
 <title>Mirror Lab — Optical Experiment</title>
 <style>
 :root{
- --bg:#080a0f;--panel:#11151d;--panel2:#181d27;--line:rgba(255,255,255,.12);
- --text:#f7f8fb;--muted:#9ba5b5;--accent:#7c6cff;--good:#35d58a;
+ --bg:#07090e;--panel:#11151d;--panel2:#191e28;--line:rgba(255,255,255,.13);
+ --text:#f7f8fb;--muted:#98a2b2;--accent:#7c6cff;--good:#35d58a
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-body{overscroll-behavior:none}
-button,select,input{font:inherit}
-button{border:0;color:var(--text);touch-action:manipulation}
-#app{position:relative;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 35%,#151923 0,#080a0f 55%,#06070b 100%)}
+body{overscroll-behavior:none}button,select,input{font:inherit}button{border:0;color:var(--text);touch-action:manipulation}
+#app{position:relative;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 42%,#181c27 0,#0a0d13 52%,#06070b 100%)}
 
-/* Optical stage */
+/* CAMERA / OPTICAL CANVAS */
 #mirrorGL{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
-#shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.42) 0%,transparent 25%,transparent 66%,rgba(0,0,0,.72) 100%)}
+#shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.38),transparent 30%,transparent 58%,rgba(0,0,0,.76))}
 #mirrorRing{
- position:absolute;left:50%;top:45%;width:min(76vw,420px);aspect-ratio:1;
- transform:translate(-50%,-50%);border:2px solid rgba(255,255,255,.86);border-radius:50%;
- box-shadow:0 0 0 5px rgba(255,255,255,.055),0 0 42px rgba(124,108,255,.14),inset 0 0 40px rgba(124,108,255,.12);
+ position:absolute;left:50%;top:39%;width:min(72vw,390px);aspect-ratio:1;
+ transform:translate(-50%,-50%);border:2px solid rgba(255,255,255,.9);border-radius:50%;
+ box-shadow:0 0 0 5px rgba(255,255,255,.045),0 0 45px rgba(124,108,255,.16),inset 0 0 42px rgba(124,108,255,.1);
  pointer-events:none;z-index:2
 }
 
-/* Header */
+/* HEADER */
 header{
- position:absolute;top:0;left:0;right:0;height:68px;padding:12px 16px 8px;
- display:flex;align-items:center;justify-content:space-between;z-index:20;
- background:linear-gradient(180deg,rgba(8,10,15,.94),rgba(8,10,15,.72),transparent)
+ position:absolute;top:0;left:0;right:0;height:64px;padding:11px 16px 7px;
+ display:flex;align-items:center;justify-content:space-between;z-index:30;
+ background:linear-gradient(180deg,rgba(7,9,14,.98),rgba(7,9,14,.84),transparent)
 }
-.title{font-size:18px;font-weight:900;letter-spacing:-.35px}
-.subtitle{margin-top:2px;font-size:10px;color:var(--muted)}
-.status{
- display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid var(--line);
- border-radius:999px;background:rgba(17,21,29,.8);font-size:11px;font-weight:850;backdrop-filter:blur(12px)
-}
+.title{font-size:19px;font-weight:900;letter-spacing:-.4px}.subtitle{margin-top:2px;font-size:10px;color:var(--muted)}
+.status{display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid var(--line);border-radius:999px;background:rgba(17,21,29,.82);font-size:11px;font-weight:850;backdrop-filter:blur(14px)}
 .dot{width:8px;height:8px;border-radius:50%;background:#687180;box-shadow:0 0 0 4px rgba(104,113,128,.12)}
-.dot.live{background:#35d58a;box-shadow:0 0 0 4px rgba(53,213,138,.13),0 0 12px rgba(53,213,138,.45)}
+.dot.live{background:var(--good);box-shadow:0 0 0 4px rgba(53,213,138,.13),0 0 12px rgba(53,213,138,.45)}
 
-/* Top selectors */
+/* TOP CONTROL STRIP */
 .topBar{
- position:absolute;top:72px;left:12px;right:12px;z-index:18;
+ position:absolute;top:72px;left:12px;right:12px;height:55px;z-index:25;
  display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px
 }
-.topSelect{
- min-width:0;margin:0;padding:7px 9px;border:1px solid var(--line);border-radius:13px;
- background:rgba(17,21,29,.91);backdrop-filter:blur(16px);box-shadow:0 8px 24px rgba(0,0,0,.32)
-}
-.topSelect span{display:block;margin-bottom:3px;color:var(--muted);font-size:7px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
-.topSelect select{
- width:100%;height:25px;padding:0 5px;border:0;outline:0;border-radius:8px;
- background:rgba(255,255,255,.07);color:#fff;font-size:11px;font-weight:850
-}
-.topSelect select option{background:#171b23;color:#fff}
+.topSelect{min-width:0;margin:0;padding:6px 8px;border:1px solid var(--line);border-radius:14px;background:rgba(18,22,30,.94);backdrop-filter:blur(16px);box-shadow:0 7px 22px rgba(0,0,0,.28)}
+.topSelect span{display:block;margin-bottom:3px;color:var(--muted);font-size:7px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.topSelect select{width:100%;height:27px;padding:0 6px;border:0;outline:0;border-radius:9px;background:#202530;color:#fff;font-size:11px;font-weight:850;appearance:auto}
+.topSelect select option{background:#181c24;color:#fff}
 
-/* Stage cards */
+/* EXPERIMENT STAGE CARDS */
 .rayGraph{
- position:absolute;top:130px;left:12px;width:calc(62% - 8px);height:190px;max-width:275px;
- z-index:10;padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:18px;
- background:rgba(8,11,17,.88);backdrop-filter:blur(16px);box-shadow:0 12px 32px rgba(0,0,0,.38)
+ position:absolute;top:140px;left:12px;width:calc(62% - 10px);height:190px;z-index:12;
+ padding:10px;border:1px solid rgba(255,255,255,.16);border-radius:20px;
+ background:rgba(8,11,17,.91);backdrop-filter:blur(18px);box-shadow:0 14px 35px rgba(0,0,0,.4)
 }
-.rayGraphTitle{font-size:11px;font-weight:900;margin-bottom:4px}
-.rayGraph svg{display:block;width:100%;height:160px}
-.rayLabel{font-size:10px;fill:#aab2c0}.rayMain{stroke:#eef2f7;stroke-width:1.2}
-.rayAux{stroke:#7c6cff;stroke-width:1;stroke-dasharray:3 2}.rayObj{stroke:#fff;stroke-width:2}.rayImg{stroke:#39d98a;stroke-width:2}
-
+.rayGraphTitle{font-size:11px;font-weight:900;margin-bottom:4px}.rayGraph svg{display:block;width:100%;height:158px}
+.rayLabel{font-size:10px;fill:#aab2c0}.rayMain{stroke:#eef2f7;stroke-width:1.2}.rayAux{stroke:#7c6cff;stroke-width:1;stroke-dasharray:3 2}.rayObj{stroke:#fff;stroke-width:2}.rayImg{stroke:#39d98a;stroke-width:2}
 #camera{
- position:absolute;top:130px;right:12px;width:34%;max-width:150px;height:190px;object-fit:cover;
- background:#111;border:1px solid rgba(255,255,255,.2);border-radius:18px;z-index:10;
- box-shadow:0 12px 32px rgba(0,0,0,.42);transform:scaleX(-1)
+ position:absolute;top:140px;right:12px;width:calc(38% - 2px);height:190px;object-fit:cover;
+ background:#111;border:1px solid rgba(255,255,255,.2);border-radius:20px;z-index:12;
+ box-shadow:0 14px 35px rgba(0,0,0,.42);transform:scaleX(-1)
 }
-.camera-label{
- position:absolute;top:139px;right:20px;z-index:11;padding:4px 7px;border-radius:8px;
- background:rgba(0,0,0,.55);font-size:8px;font-weight:900;pointer-events:none;backdrop-filter:blur(8px)
-}
-#tip{
- position:absolute;left:50%;top:calc(45% + min(38vw,190px));transform:translateX(-50%);
- z-index:5;width:max-content;max-width:88%;text-align:center;font-size:9px;color:#b9c0cb;
- padding:5px 9px;border-radius:999px;background:rgba(8,10,15,.58);backdrop-filter:blur(8px)
-}
-#start{
- position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);z-index:16;
- padding:14px 21px;border-radius:17px;background:#fff;color:#111;font-size:14px;font-weight:900;
- box-shadow:0 14px 38px rgba(0,0,0,.48)
-}
+.camera-label{position:absolute;top:150px;right:21px;z-index:13;padding:5px 8px;border-radius:8px;background:rgba(0,0,0,.58);font-size:8px;font-weight:900;pointer-events:none}
+#tip{position:absolute;left:50%;top:calc(39% + min(36vw,185px));transform:translateX(-50%);z-index:7;max-width:88%;padding:6px 10px;border-radius:999px;background:rgba(7,9,14,.65);color:#c0c6d1;font-size:9px;text-align:center;backdrop-filter:blur(8px)}
+#start{position:absolute;left:50%;top:39%;transform:translate(-50%,-50%);z-index:20;padding:14px 22px;border-radius:18px;background:#fff;color:#111;font-size:14px;font-weight:900;box-shadow:0 14px 40px rgba(0,0,0,.5)}
 #start.hide{display:none}
 
-/* Bottom sheet */
+/* SETTINGS SHEET */
 .controls{
- position:absolute;left:10px;right:10px;bottom:10px;z-index:15;
- max-height:43vh;overflow:auto;padding:13px 12px 15px;
- border:1px solid rgba(255,255,255,.12);border-radius:22px;
- background:rgba(15,19,27,.94);backdrop-filter:blur(22px);box-shadow:0 18px 50px rgba(0,0,0,.58)
+ position:absolute;left:10px;right:10px;bottom:9px;z-index:20;
+ max-height:43vh;overflow:auto;padding:12px 12px 15px;
+ border:1px solid rgba(255,255,255,.13);border-radius:23px;
+ background:rgba(15,19,27,.96);backdrop-filter:blur(24px);box-shadow:0 20px 55px rgba(0,0,0,.62)
 }
-.sheetHandle{width:34px;height:4px;margin:0 auto 9px;border-radius:99px;background:rgba(255,255,255,.2)}
-.sectionTitle{
- margin:0 2px 6px;color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.09em;text-transform:uppercase
-}
-.segment{
- display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:10px;
- border-radius:14px;background:rgba(255,255,255,.055)
-}
-.segment button{
- min-height:42px;border-radius:11px;background:transparent;font-size:12px;font-weight:900
-}
+.sheetHandle{width:36px;height:4px;margin:0 auto 10px;border-radius:99px;background:rgba(255,255,255,.2)}
+.sectionTitle{margin:0 2px 6px;color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+.segment{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:10px;border-radius:14px;background:rgba(255,255,255,.055)}
+.segment button{min-height:43px;border-radius:11px;background:transparent;font-size:12px;font-weight:900}
 .segment button.active{background:#fff;color:#111;box-shadow:0 4px 14px rgba(0,0,0,.22)}
-.tools{display:none}
-label.controlLabel{
- display:flex;align-items:center;justify-content:space-between;margin:9px 2px 5px;
- color:var(--muted);font-size:10px;font-weight:800
-}
+label.controlLabel{display:flex;align-items:center;justify-content:space-between;margin:9px 2px 5px;color:var(--muted);font-size:10px;font-weight:800}
 .controlLabel span:last-child{color:#fff;font-size:11px;font-weight:900}
-.points{
- position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:5px;
- border:1px solid rgba(255,255,255,.13);border-radius:16px;background:rgba(255,255,255,.045)
-}
-.points:before{
- content:"";position:absolute;left:10%;right:10%;top:34px;height:2px;background:rgba(255,255,255,.2)
-}
-.point{
- position:relative;z-index:2;min-height:58px;border:1px solid transparent;border-radius:12px;
- background:rgba(255,255,255,.035);font-size:16px;font-weight:900;color:#d7dbe2
-}
+.points{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:5px;border:1px solid rgba(255,255,255,.13);border-radius:17px;background:rgba(255,255,255,.045)}
+.points:before{content:"";position:absolute;left:9%;right:9%;top:34px;height:2px;background:rgba(255,255,255,.2)}
+.point{position:relative;z-index:2;min-height:59px;border:1px solid transparent;border-radius:12px;background:rgba(255,255,255,.035);font-size:16px;font-weight:900;color:#d7dbe2}
 .point small{display:block;margin-top:1px;font-size:8px;font-weight:800;color:inherit;opacity:.6}
-.point:after{
- content:"";display:block;width:10px;height:10px;margin:7px auto 0;border-radius:50%;
- background:#59616f;box-shadow:0 0 0 3px rgba(89,97,111,.14)
-}
-.point.active{background:#fff;color:#111;box-shadow:0 5px 16px rgba(0,0,0,.25)}
-.point.active:after{background:#111;box-shadow:0 0 0 3px rgba(17,17,17,.12)}
+.point:after{content:"";display:block;width:10px;height:10px;margin:7px auto 0;border-radius:50%;background:#59616f;box-shadow:0 0 0 3px rgba(89,97,111,.14)}
+.point.active{background:#fff;color:#111;box-shadow:0 5px 16px rgba(0,0,0,.25)}.point.active:after{background:#111;box-shadow:0 0 0 3px rgba(17,17,17,.12)}
 input[type=range]{width:100%;margin:4px 0 0;accent-color:var(--accent)}
-#lesson{
- margin-top:9px;padding:8px 10px;border-radius:11px;text-align:center;
- background:rgba(124,108,255,.08);border:1px solid rgba(124,108,255,.13);
- color:#c5c9d3;font-size:9px;line-height:1.4
-}
+#lesson{margin-top:9px;padding:8px 10px;border-radius:11px;text-align:center;background:rgba(124,108,255,.08);border:1px solid rgba(124,108,255,.13);color:#c5c9d3;font-size:9px;line-height:1.4}
 
-/* Compact phones */
 @media(max-width:390px){
  header{padding-left:13px;padding-right:13px}.title{font-size:17px}
- .topBar{left:9px;right:9px;gap:5px}.topSelect{padding:6px 7px}.topSelect span{font-size:6px}.topSelect select{font-size:10px}
- .rayGraph{left:9px;top:126px;width:59%;height:176px;padding:8px}.rayGraph svg{height:148px}
- #camera{top:126px;right:9px;width:35%;height:176px}.camera-label{top:135px;right:16px}
- .controls{left:8px;right:8px;bottom:8px;padding:11px 10px 13px;max-height:44vh}
+ .topBar{left:9px;right:9px;gap:5px}.topSelect{padding:6px 6px}.topSelect span{font-size:6px}.topSelect select{font-size:10px}
+ .rayGraph{top:136px;left:9px;width:calc(62% - 8px);height:176px;padding:8px}.rayGraph svg{height:146px}
+ #camera{top:136px;right:9px;width:calc(38% - 1px);height:176px}.camera-label{top:145px;right:16px}
+ .controls{left:8px;right:8px;bottom:8px;max-height:44vh;padding:11px 10px 13px}
 }
-</style>
-</head>
-<body>
+</style><body>
 <div id="app">
 <video id="camera" autoplay playsinline muted></video>
 <canvas id="mirrorGL"></canvas>
 <div id="shade"></div>
+
 <header>
  <div><div class="title">Mirror Lab</div><div class="subtitle">Realtime optical experiment</div></div>
  <div class="status"><span id="dot" class="dot"></span><span id="status">Camera off</span></div>
@@ -208,8 +153,7 @@ input[type=range]{width:100%;margin:4px 0 0;accent-color:var(--accent)}
  <input id="curv" type="range" min="15" max="90" value="55">
  <div id="lesson">At C (2F): real, inverted and same-size image forms at C.</div>
 </section>
-</div>
-<script>
+</div><script>
 const video=document.getElementById('camera'),canvas=document.getElementById('mirrorGL');
 const start=document.getElementById('start'),dot=document.getElementById('dot'),statusEl=document.getElementById('status');
 const curv=document.getElementById('curv'),curvVal=document.getElementById('curvVal'),distVal=document.getElementById('distVal'),lesson=document.getElementById('lesson');
