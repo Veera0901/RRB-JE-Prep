@@ -368,8 +368,8 @@ function updateLesson(){
  }
 }
 function updateSystemUI(){
- const mt=document.getElementById('mirrorTypes'),lt=document.getElementById('lensTypes');
- mt.style.display=system==='mirror'?'grid':'none'; lt.style.display=system==='lens'?'grid':'none';
+ const mt=document.getElementById('mirrorTypes'),lt=document.getElementById('lensTypes'),dt=document.getElementById('deviceTypeTitle');
+ mt.style.display=system==='mirror'?'grid':'none'; lt.style.display=system==='lens'?'grid':'none'; dt.textContent=system==='mirror'?'Mirror type':'Lens type';
  systemSelect.value=system; viewSelect.value=viewMode;
  distVal.textContent=system==='mirror'
    ? (objectPosition==='infinity'?'∞ · Far':objectPosition==='C'?'C · 2F':objectPosition==='F'?'F · Focus':'P · Pole')
