@@ -15,11 +15,10 @@ h1{font-size:17px;margin:0;font-weight:800}.sub{font-size:10px;color:#9eabc0;mar
 #viewport{position:relative;flex:1;min-height:0;overflow:hidden;background:#101722}
 #video{position:absolute;width:100%;height:100%;object-fit:cover;inset:0;filter:saturate(1.03)}
 #mirror{position:absolute;left:14%;top:18%;width:72%;height:58%;overflow:hidden;border-radius:28px;border:2px solid rgba(240,248,255,.9);box-shadow:0 12px 45px rgba(0,0,0,.42),inset 0 0 30px rgba(255,255,255,.12);touch-action:none;will-change:transform}
-#reflection{position:absolute;width:100%;height:100%;object-fit:cover;inset:0;transform:scaleX(-1) scale(1.32);transform-origin:50% 50%;will-change:transform;filter:saturate(1.04)}
+#reflection{position:absolute;width:100%;height:100%;object-fit:cover;inset:0;transform:scaleX(-1) scale(1.32);transform-origin:50% 50%;will-change:transform;filter:saturate(1.04);backface-visibility:hidden;transform-style:preserve-3d}
 #mirror .shine{position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.18),transparent 22%,transparent 76%,rgba(255,255,255,.07));pointer-events:none}
 #mirror .curvature{position:absolute;inset:0;border-radius:48% 52% 45% 55% / 8% 8% 92% 92%;box-shadow:inset 0 0 28px rgba(80,190,255,.22);pointer-events:none}
 #mirrorText{position:absolute;left:12px;top:10px;font-size:11px;font-weight:900;text-shadow:0 1px 4px #000;pointer-events:none}
-#mirrorCanvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;pointer-events:none}
 #hint{position:absolute;left:50%;top:14px;transform:translateX(-50%);padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.58);backdrop-filter:blur(8px);font-size:11px;white-space:nowrap;color:#e9eef8;z-index:3;pointer-events:none}
 #start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;border:0;border-radius:16px;padding:14px 20px;background:#18a97e;color:#fff;font-weight:850;font-size:15px;box-shadow:0 8px 30px #0008}
 #start.hide{display:none}
@@ -39,7 +38,6 @@ input{width:100%;accent-color:#7567ff}
 <div id="viewport">
 <video id="video" autoplay playsinline muted></video>
 <div id="mirror"><video id="reflection" autoplay playsinline muted></video><div class="shine"></div><div class="curvature"></div><span id="mirrorText">CONCAVE • MAGNIFYING</span></div>
-<canvas id="mirrorCanvas"></canvas>
 <div id="hint">Move your phone — the virtual mirror stays on screen</div>
 <button id="start">📷 Start Camera</button>
 <div class="bottom">
@@ -55,7 +53,7 @@ input{width:100%;accent-color:#7567ff}
 </div>
 </div>
 <script>
-const video=document.getElementById('video'),reflection=document.getElementById('reflection'),canvas=document.getElementById('mirrorCanvas'),ctx=canvas.getContext('2d');
+const video=document.getElementById('video'),reflection=document.getElementById('reflection');
 const mirrorEl=document.getElementById('mirror'),mirrorText=document.getElementById('mirrorText');
 const start=document.getElementById('start'),strength=document.getElementById('strength'),strengthText=document.getElementById('strengthText');
 const badge=document.getElementById('badge'),hint=document.getElementById('hint');
@@ -74,8 +72,6 @@ function applyMirror(){
  mirrorEl.style.boxShadow=mode==='concave'?'0 12px 45px rgba(0,0,0,.42),inset 0 0 34px rgba(80,190,255,.24)':'0 12px 45px rgba(0,0,0,.42),inset 0 0 34px rgba(115,240,170,.20)';
  mirrorText.textContent=mode==='concave'?'CONCAVE • MAGNIFYING':'CONVEX • WIDE-ANGLE';
 }
-function frame(){applyMirror();requestAnimationFrame(frame)}
-function frame(t){if(t-lastTime>24){drawMirror();lastTime=t}requestAnimationFrame(frame)}
 async function startCamera(){
  if(stream)stream.getTracks().forEach(t=>t.stop());
  try{
@@ -88,12 +84,12 @@ strength.oninput=()=>strengthText.textContent=strength.value+'%';
 document.getElementById('concave').onclick=()=>setMode('concave');
 document.getElementById('convex').onclick=()=>setMode('convex');
 document.getElementById('flip').onclick=()=>{facing=facing==='user'?'environment':'user';startCamera()};
-start.onclick=startCamera;window.addEventListener('resize',resize);video.addEventListener('loadedmetadata',resize);
+start.onclick=startCamera;window.addEventListener('resize',resize);
 let pointerId=null;
-mirrorEl.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect();drag={x:e.clientX-r.left,y:e.clientY-r.top,mx:mirror.x,my:mirror.y};pointerId=e.pointerId;mirrorEl.setPointerCapture(pointerId)});
-mirrorEl.addEventListener('pointermove',e=>{if(!drag)return;const r=canvas.getBoundingClientRect();mirror.x=Math.max(mirror.w/2,Math.min(1-mirror.w/2,drag.mx+(e.clientX-r.left-drag.x)/r.width));mirror.y=Math.max(mirror.h/2,Math.min(1-mirror.h/2,drag.my+(e.clientY-r.top-drag.y)/r.height))});
+mirrorEl.addEventListener('pointerdown',e=>{const r=document.getElementById('viewport').getBoundingClientRect();drag={x:e.clientX-r.left,y:e.clientY-r.top,mx:mirror.x,my:mirror.y};pointerId=e.pointerId;mirrorEl.setPointerCapture(pointerId)});
+mirrorEl.addEventListener('pointermove',e=>{if(!drag)return;const r=document.getElementById('viewport').getBoundingClientRect();mirror.x=Math.max(mirror.w/2,Math.min(1-mirror.w/2,drag.mx+(e.clientX-r.left-drag.x)/r.width));mirror.y=Math.max(mirror.h/2,Math.min(1-mirror.h/2,drag.my+(e.clientY-r.top-drag.y)/r.height));applyMirror();});
 mirrorEl.addEventListener('pointerup',()=>drag=null);mirrorEl.addEventListener('pointercancel',()=>drag=null);
-resize();setMode('concave');requestAnimationFrame(frame);
+setMode('concave');applyMirror();
 </script>
 </body>
 </html>
