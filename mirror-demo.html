@@ -27,11 +27,15 @@ button{border:0;color:#fff;background:transparent;border-radius:10px;padding:10p
 .segment button.active{background:#fff;color:#111}
 .tools{display:flex;gap:7px;margin-top:8px}
 .tool{flex:1;background:rgba(255,255,255,.08);border:1px solid var(--line)}
-.points{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:5px;padding:4px;border-radius:13px;background:rgba(255,255,255,.07)}
-.point{background:transparent;border-radius:10px;padding:9px 6px}
-.point.active{background:#fff;color:#111}
-.tool:active{transform:scale(.98)}
-label{display:flex;justify-content:space-between;margin-top:10px;color:var(--muted);font-size:10px;font-weight:700}
+.points{position:relative;display:grid;grid-template-columns:repeat(4,1fr);margin-top:8px;padding:6px 4px 5px;border:1px solid rgba(255,255,255,.10);border-radius:15px;background:rgba(255,255,255,.055)}
+.points:before{content:"";position:absolute;left:14%;right:14%;top:23px;height:2px;background:rgba(255,255,255,.16);border-radius:2px}
+.point{position:relative;z-index:1;background:transparent;border-radius:11px;padding:7px 4px 8px;font-size:12px;color:#b9c0cc}
+.point:after{content:"";display:block;width:7px;height:7px;margin:7px auto 0;border-radius:50%;background:#697180;box-shadow:0 0 0 3px rgba(105,113,128,.10)}
+.point.active{background:rgba(255,255,255,.12);color:#fff}
+.point.active:after{background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.16),0 0 12px rgba(255,255,255,.45)}
+.tool:active,.point:active{transform:scale(.97)}
+label{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:10px;font-weight:700}
+label span:last-child{color:#fff;font-size:11px;font-weight:850}
 input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
 #lesson{margin-top:7px;text-align:center;font-size:10px;color:#c1c7d2;line-height:1.35}
 </style>
@@ -50,7 +54,7 @@ input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
 <section class="controls">
  <div class="segment"><button id="concave" class="active">Concave</button><button id="convex">Convex</button></div>
  <div class="tools"><button class="tool" id="flip">↔ Camera</button><button class="tool" id="reset">Reset mirror</button></div>
- <label><span>Object position</span><span id="distVal">C</span></label>
+ <label><span>Object position</span><span id="distVal">C · 2F</span></label>
  <div class="points" id="points">
   <button class="point" data-pos="infinity">∞</button>
   <button class="point active" data-pos="C">C</button>
@@ -59,7 +63,7 @@ input{width:100%;margin:4px 0 0;accent-color:var(--accent)}
  </div>
  <label><span>Mirror curvature</span><span id="curvVal">55%</span></label>
  <input id="curv" type="range" min="15" max="90" value="55">
- <div id="lesson">At C (2F): real, inverted, same-size image.</div>
+ <div id="lesson">At C (2F): real, inverted and same-size image forms at C.</div>
 </section>
 </div>
 <script>
@@ -176,7 +180,7 @@ curv.oninput=()=>{curvVal.textContent=curv.value+'%';draw()};
 points.forEach(btn=>btn.onclick=()=>{
  objectPosition=btn.dataset.pos;
  points.forEach(b=>b.classList.toggle('active',b===btn));
- distVal.textContent=objectPosition==='infinity'?'∞':objectPosition;
+ distVal.textContent=objectPosition==='infinity'?'∞ · Far':objectPosition==='C'?'C · 2F':objectPosition==='F'?'F · Focus':'P · Pole';
  updateLesson();draw();
 });
 window.addEventListener('resize',resize);
